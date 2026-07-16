@@ -1,0 +1,43 @@
+# Gradle
+.gradle/
+build/
+app/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+.navigation/
+
+# Local configuration (SDK paths, signing secrets)
+local.properties
+
+# Build outputs
+*.apk
+*.aab
+app/release/
+app/debug/
+output-metadata.json
+
+# Build logs and temp output
+build-logs/
+build_output.txt
+build_log.txt
+build_final.log
+test_output.log
+.last_build_success
+.last_successful_files
+.last_successful_state
+
+# Kotlin
+.kotlin/
+
+# Lint
+lint-report.html
+lint-report.xml
+
+# Profiling / misc
+*.hprof
+.DS_Store
+Thumbs.db
