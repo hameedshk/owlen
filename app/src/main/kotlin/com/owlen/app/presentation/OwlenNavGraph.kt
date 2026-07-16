@@ -164,12 +164,12 @@ fun OwlenNavGraph(
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
+                                // Tabs are single screens — no per-tab stack to save/restore.
+                                // (restoreState here used to resurrect screens pushed on top of
+                                // Home, so tapping the Home tab never actually showed Home.)
                                 navController.navigate(tab.route) {
-                                    popUpTo(startDestination) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.findStartDestination().id)
                                     launchSingleTop = true
-                                    restoreState = true
                                 }
                             },
                             icon = {
