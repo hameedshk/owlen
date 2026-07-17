@@ -1,18 +1,13 @@
 package com.owlen.app.presentation.ui
 
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,8 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -44,10 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -57,17 +47,20 @@ import com.owlen.app.R
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
-import com.owlen.app.presentation.ui.theme.GlassBorder
-import com.owlen.app.presentation.ui.theme.GlassFill
 import com.owlen.app.presentation.ui.theme.Green
-import com.owlen.app.presentation.ui.theme.GreenDim
+import com.owlen.app.presentation.ui.theme.GreenEdge
+import com.owlen.app.presentation.ui.theme.GreenEdgeDeep
+import com.owlen.app.presentation.ui.theme.NeoPopPlate
+import com.owlen.app.presentation.ui.theme.NeutralEdge
+import com.owlen.app.presentation.ui.theme.OnPrimary
 import com.owlen.app.presentation.ui.theme.Primary
-import com.owlen.app.presentation.ui.theme.TextDisabled
-import com.owlen.app.presentation.ui.theme.glass
-import com.owlen.app.presentation.ui.theme.glow
+import com.owlen.app.presentation.ui.theme.Stroke
+import com.owlen.app.presentation.ui.theme.StrokeBright
+import com.owlen.app.presentation.ui.theme.SurfaceCard
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
+import com.owlen.app.presentation.ui.theme.neoPopCard
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -111,7 +104,7 @@ fun HomeScreen(
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = 1.06f,
+        targetValue = 1.02f,
         animationSpec = infiniteRepeatable(
             animation = tween(1400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -124,7 +117,6 @@ fun HomeScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Top bar — logo only; Settings accessible via bottom nav
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,7 +161,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Interruption banner
             if (interruptedAtMs != null) {
                 val interruptedTime = remember(interruptedAtMs) {
                     SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(interruptedAtMs))
@@ -177,7 +168,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .glass(RoundedCornerShape(12.dp), fill = Warning.copy(alpha = 0.10f))
+                        .neoPopCard(tint = Warning.copy(alpha = 0.08f))
                         .clickable(onClick = onInterruptionClick)
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -198,7 +189,6 @@ fun HomeScreen(
                     Box(
                         modifier = Modifier
                             .size(32.dp)
-                            .clip(CircleShape)
                             .clickable(onClick = onInterruptionDismiss),
                         contentAlignment = Alignment.Center
                     ) {
@@ -213,95 +203,32 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Hero power button: rotating shimmer ring + breathing glow + press feedback
-            val innerFill = if (isProtectionActive) Green.copy(alpha = 0.10f) else GlassFill
-            val iconTint = if (isProtectionActive) Green else TextSecondary
-            val buttonScale = if (isProtectionActive) pulseScale else 1f
-
-            val ringRotation by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    tween(if (isProtectionActive) 4000 else 16000, easing = LinearEasing)
-                ),
-                label = "ringRotation"
-            )
-            val glowBreath by infiniteTransition.animateFloat(
-                initialValue = 0.6f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    tween(2200, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "glowBreath"
-            )
-
-            val interactionSource = remember { MutableInteractionSource() }
-            val pressed by interactionSource.collectIsPressedAsState()
-            val pressScale by animateFloatAsState(
-                targetValue = if (pressed) 0.94f else 1f,
-                label = "pressScale"
-            )
-
-            Box(
-                contentAlignment = Alignment.Center,
+            // Hero: 160dp square NeoPop plate with 10dp depth
+            NeoPopPlate(
+                onClick = { onProtectionToggle(!isProtectionActive) },
                 modifier = Modifier
                     .padding(vertical = 36.dp)
                     .size(160.dp)
-                    .scale(buttonScale * pressScale)
-                    .then(
-                        if (isProtectionActive) Modifier.glow(Green, 36.dp, alpha = 0.24f * glowBreath)
-                        else Modifier.glow(Primary, 24.dp, alpha = 0.15f * glowBreath)
-                    )
+                    .then(if (isProtectionActive) Modifier.scale(pulseScale) else Modifier),
+                faceColor = if (isProtectionActive) Green else SurfaceCard,
+                edgeRight = if (isProtectionActive) GreenEdge else NeutralEdge,
+                edgeBottom = if (isProtectionActive) GreenEdgeDeep else NeutralEdge,
+                strokeColor = if (isProtectionActive) Green else StrokeBright,
+                depth = 10.dp
             ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .graphicsLayer { rotationZ = ringRotation }
-                        .border(
-                            width = 2.dp,
-                            brush = if (isProtectionActive)
-                                Brush.sweepGradient(
-                                    listOf(Green, GreenDim, Green.copy(alpha = 0.15f), Green)
-                                )
-                            else
-                                Brush.sweepGradient(
-                                    listOf(
-                                        TextDisabled,
-                                        Primary.copy(alpha = 0.55f),
-                                        TextDisabled,
-                                        TextDisabled
-                                    )
-                                ),
-                            shape = CircleShape
-                        )
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(CircleShape)
-                        .background(innerFill)
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null
-                        ) { onProtectionToggle(!isProtectionActive) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Rounded.PowerSettingsNew,
-                            contentDescription = if (isProtectionActive) "Stop protection" else "Start protection",
-                            tint = iconTint,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = if (isProtectionActive) "Active" else "Tap to Start",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = iconTint,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Rounded.PowerSettingsNew,
+                        contentDescription = if (isProtectionActive) "Stop protection" else "Start protection",
+                        tint = if (isProtectionActive) OnPrimary else Primary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (isProtectionActive) "ACTIVE" else "TAP TO START",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isProtectionActive) OnPrimary else Primary
+                    )
                 }
             }
 
@@ -316,12 +243,11 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Sleep schedule card
             FadeSlideIn(delayMillis = 150) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .glass(RoundedCornerShape(16.dp))
+                        .neoPopCard()
                         .padding(vertical = 20.dp, horizontal = 24.dp)
                 ) {
                     Row(
@@ -338,7 +264,7 @@ fun HomeScreen(
                             modifier = Modifier
                                 .width(1.dp)
                                 .height(48.dp)
-                                .background(GlassBorder)
+                                .background(Stroke)
                         )
                         ScheduleTimeItem(
                             icon = Icons.Rounded.LightMode,
@@ -351,7 +277,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Quick-info chips: sound & sensitivity (tappable → settings)
             FadeSlideIn(delayMillis = 280) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -414,7 +339,7 @@ private fun QuickInfoChip(
 ) {
     Row(
         modifier = modifier
-            .glass(RoundedCornerShape(12.dp))
+            .neoPopCard()
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically

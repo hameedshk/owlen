@@ -33,16 +33,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.domain.model.EventClass
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.presentation.ui.theme.Primary
-import com.owlen.app.presentation.ui.theme.SurfaceVar
+import com.owlen.app.presentation.ui.theme.StrokeBright
+import com.owlen.app.presentation.ui.theme.SurfaceCard
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.glass
 import kotlinx.coroutines.delay
 
 private const val AUTO_DISMISS_SECONDS = 5
@@ -90,14 +91,16 @@ fun EventDetectedOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    // Mostly opaque glass: the overlay carries key info and sits
-                    // over screen content, so it must stay readable
-                    .glass(
-                        RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                        fill = SurfaceVar.copy(alpha = 0.80f)
-                    )
+                    .background(SurfaceCard, RectangleShape)
                     .drawBehind {
-                        // Amber left border 4dp
+                        // StrokeBright top border
+                        drawLine(
+                            color = StrokeBright,
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                        // Amber left accent 4dp
                         drawLine(
                             color = Primary,
                             start = Offset(0f, 0f),
@@ -152,9 +155,7 @@ fun EventDetectedOverlay(
                         color = TextSecondary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         LinearProgressIndicator(
                             progress = { maskingVolume },
                             modifier = Modifier

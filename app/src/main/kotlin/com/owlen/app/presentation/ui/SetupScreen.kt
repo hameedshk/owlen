@@ -1,8 +1,5 @@
 package com.owlen.app.presentation.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
@@ -19,14 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -34,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,16 +42,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
-import com.owlen.app.presentation.ui.theme.Background
-import com.owlen.app.presentation.ui.theme.GlassFill
-import com.owlen.app.presentation.ui.theme.GlassFillStrong
+import com.owlen.app.presentation.ui.components.NeoPopButton
+import com.owlen.app.presentation.ui.components.NeoPopRadio
+import com.owlen.app.presentation.ui.components.NeoPopRow
+import com.owlen.app.presentation.ui.components.NeoPopRowDivider
+import com.owlen.app.presentation.ui.components.NeoPopSegmented
 import com.owlen.app.presentation.ui.theme.Green
-import com.owlen.app.presentation.ui.theme.OnPrimary
-import com.owlen.app.presentation.ui.theme.Primary
+import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.glass
-import com.owlen.app.presentation.ui.theme.glow
+import com.owlen.app.presentation.ui.theme.neoPopCard
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
@@ -73,27 +65,20 @@ fun SetupScreen(
     onNavigateToCalibration: () -> Unit,
     onSaveSettings: (sleepHour: Int, wakeHour: Int, wakeMinute: Int, sound: MaskingSound, sensitivity: Sensitivity) -> Unit = { _, _, _, _, _ -> }
 ) {
-    // Keyed on initial values: DataStore loads async, so re-seed when they arrive
     var sleepHour by remember(initialSleepHour) { mutableIntStateOf(initialSleepHour) }
     var wakeHour by remember(initialWakeHour) { mutableIntStateOf(initialWakeHour) }
     var wakeMinute by remember(initialWakeMinute) { mutableIntStateOf(initialWakeMinute) }
     var selectedSound by remember(initialSound) { mutableStateOf(initialSound) }
     var selectedSensitivity by remember(initialSensitivity) { mutableStateOf(initialSensitivity) }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top bar
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.size(48.dp)
-            ) {
+            IconButton(onClick = onNavigateBack, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = Icons.Rounded.ArrowBack,
                     contentDescription = "Back",
@@ -108,12 +93,11 @@ fun SetupScreen(
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
                 color = Green,
-                trackColor = GlassFillStrong
+                trackColor = Stroke
             )
             Spacer(modifier = Modifier.width(16.dp))
         }
 
-        // Single scrollable page: all three settings, one Continue
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -184,13 +168,16 @@ fun SetupScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            MaskingSound.entries.forEach { sound ->
-                SoundOptionRow(
-                    label = sound.displayName,
-                    selected = selectedSound == sound,
-                    onClick = { selectedSound = sound }
-                )
-                Spacer(modifier = Modifier.height(2.dp))
+            Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
+                MaskingSound.entries.forEachIndexed { index, sound ->
+                    NeoPopRow(
+                        title = sound.displayName,
+                        selected = selectedSound == sound,
+                        onClick = { selectedSound = sound },
+                        leading = { NeoPopRadio(selected = selectedSound == sound) }
+                    )
+                    if (index < MaskingSound.entries.size - 1) NeoPopRowDivider()
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -209,44 +196,34 @@ fun SetupScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Sensitivity.entries.forEach { sensitivity ->
-                SoundOptionRow(
-                    label = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
-                    selected = selectedSensitivity == sensitivity,
-                    onClick = { selectedSensitivity = sensitivity }
-                )
-                Spacer(modifier = Modifier.height(2.dp))
+            Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
+                Sensitivity.entries.forEachIndexed { index, sensitivity ->
+                    NeoPopRow(
+                        title = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
+                        selected = selectedSensitivity == sensitivity,
+                        onClick = { selectedSensitivity = sensitivity },
+                        leading = { NeoPopRadio(selected = selectedSensitivity == sensitivity) }
+                    )
+                    if (index < Sensitivity.entries.size - 1) NeoPopRowDivider()
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Bottom button
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 32.dp)
         ) {
-            Button(
+            NeoPopButton(
+                text = "Continue",
                 onClick = {
                     onSaveSettings(sleepHour, wakeHour, wakeMinute, selectedSound, selectedSensitivity)
                     onNavigateToCalibration()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .glow(Primary, 20.dp, alpha = 0.22f),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary,
-                    contentColor = OnPrimary
-                )
-            ) {
-                Text(
-                    text = "Continue",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -263,7 +240,7 @@ private fun TimePickerCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glass(RoundedCornerShape(12.dp), fill = GlassFillStrong)
+            .neoPopCard()
             .padding(16.dp)
     ) {
         Row(
@@ -271,7 +248,6 @@ private fun TimePickerCard(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Hour picker
             NumberDrumPicker(
                 value = if (hour == 0) 12 else hour,
                 range = 1..12,
@@ -286,7 +262,6 @@ private fun TimePickerCard(
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
 
-            // Minute picker
             NumberDrumPicker(
                 value = minute,
                 range = 0..59,
@@ -296,13 +271,11 @@ private fun TimePickerCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // AM/PM toggle
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                AmPmButton(label = "AM", selected = isAm, onClick = { onAmPmChange(true) })
-                AmPmButton(label = "PM", selected = !isAm, onClick = { onAmPmChange(false) })
-            }
+            NeoPopSegmented(
+                options = listOf("AM", "PM"),
+                selectedIndex = if (isAm) 0 else 1,
+                onSelect = { index -> onAmPmChange(index == 0) }
+            )
         }
     }
 }
@@ -344,8 +317,7 @@ private fun NumberDrumPicker(
                 item.toString()
             }
             Box(
-                modifier = Modifier
-                    .size(56.dp, 40.dp),
+                modifier = Modifier.size(56.dp, 40.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -359,75 +331,3 @@ private fun NumberDrumPicker(
         }
     }
 }
-
-@Composable
-private fun AmPmButton(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) Primary else GlassFillStrong)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (selected) OnPrimary else TextSecondary
-        )
-    }
-}
-
-@Composable
-private fun SoundOptionRow(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .glass(
-                RoundedCornerShape(12.dp),
-                fill = if (selected) Primary.copy(alpha = 0.08f) else GlassFill
-            )
-            .then(
-                if (selected) Modifier.border(
-                    width = 2.dp,
-                    color = Primary,
-                    shape = RoundedCornerShape(12.dp)
-                ) else Modifier
-            )
-            .clickable(onClick = onClick)
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    .background(if (selected) Primary else Background)
-                    .border(2.dp, if (selected) Primary else TextSecondary, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                if (selected) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(OnPrimary)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (selected) Primary else TextPrimary
-            )
-        }
-    }
-}
-

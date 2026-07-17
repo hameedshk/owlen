@@ -6,7 +6,11 @@ import com.owlen.app.data.audio.AudioPlayer
 import com.owlen.app.data.log.SessionLogger
 import com.owlen.app.data.ml.EventDetector
 import com.owlen.app.data.ml.FeatureExtractor
+import com.owlen.app.data.prototypes.SoundPrototypeRepository
 import com.owlen.app.data.settings.SettingsRepository
+import com.owlen.app.domain.matcher.CustomSoundMatcher
+import com.owlen.app.domain.matcher.EventArbiter
+import com.owlen.app.domain.matcher.PrototypeBuilder
 import com.owlen.app.domain.policy.PolicyEngine
 import com.owlen.app.domain.scorer.DisturbanceScorer
 import com.owlen.app.service.ServiceRepository
@@ -55,4 +59,21 @@ object AppModule {
     @Singleton
     @Provides
     fun provideSettingsRepository(@ApplicationContext context: Context): SettingsRepository = SettingsRepository(context)
+
+    @Singleton
+    @Provides
+    fun provideSoundPrototypeRepository(@ApplicationContext context: Context): SoundPrototypeRepository =
+        SoundPrototypeRepository(context.filesDir)
+
+    @Singleton
+    @Provides
+    fun provideCustomSoundMatcher(): CustomSoundMatcher = CustomSoundMatcher()
+
+    @Singleton
+    @Provides
+    fun providePrototypeBuilder(): PrototypeBuilder = PrototypeBuilder()
+
+    @Singleton
+    @Provides
+    fun provideEventArbiter(): EventArbiter = EventArbiter()
 }

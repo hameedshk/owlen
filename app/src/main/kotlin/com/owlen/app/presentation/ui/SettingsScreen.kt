@@ -11,24 +11,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -37,18 +34,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
-import com.owlen.app.presentation.ui.theme.GlassDialog
-import com.owlen.app.presentation.ui.theme.GlassFillStrong
+import com.owlen.app.domain.model.SoundPrototype
+import com.owlen.app.presentation.ui.components.NeoPopButtonVariant
+import com.owlen.app.presentation.ui.components.NeoPopDialog
+import com.owlen.app.presentation.ui.components.NeoPopRadio
+import com.owlen.app.presentation.ui.components.NeoPopRow
+import com.owlen.app.presentation.ui.components.NeoPopRowDivider
+import com.owlen.app.presentation.ui.components.SectionHeader
+import com.owlen.app.presentation.ui.components.neoPopSliderColors
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.TextDisabled
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.glass
+import com.owlen.app.presentation.ui.theme.neoPopCard
 
 private enum class SettingsDialog {
     NONE, SOUND, VOLUME, SENSITIVITY, AUTO_STOP, SOUND_FLOOR
@@ -66,6 +68,9 @@ fun SettingsScreen(
     soundLevelFloorDb: Int = 50,
     batteryOptimisationAllowed: Boolean = true,
     appVersion: String = "1.0.0",
+    customPrototypes: List<SoundPrototype> = emptyList(),
+    onNavigateToEnrollment: () -> Unit = {},
+    onDeletePrototype: (String) -> Unit = {},
     onNavigateToSleepSchedule: () -> Unit = {},
     onSoundSelected: (MaskingSound) -> Unit = {},
     onMaxVolumeChanged: (Int) -> Unit = {},
@@ -77,6 +82,7 @@ fun SettingsScreen(
     onNavigateToAbout: () -> Unit = {}
 ) {
     var openDialog by remember { mutableStateOf(SettingsDialog.NONE) }
+    var prototypePendingDelete by remember { mutableStateOf<SoundPrototype?>(null) }
 
     val sleepFormatted = run {
         val h = if (sleepHour % 12 == 0) 12 else sleepHour % 12
@@ -112,49 +118,49 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .glass(RoundedCornerShape(12.dp))
+                .neoPopCard()
         ) {
             SettingsRow(
                 label = "Sleep Schedule",
                 value = "$sleepFormatted – $wakeFormatted",
                 onClick = onNavigateToSleepSchedule
             )
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             SettingsRow(
                 label = "Protection Sound",
                 value = preferredSound.displayName,
                 onClick = { openDialog = SettingsDialog.SOUND }
             )
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             SettingsRow(
                 label = "Maximum Volume",
                 value = "$maxVolumePct%",
                 onClick = { openDialog = SettingsDialog.VOLUME }
             )
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             SettingsRow(
                 label = "Sensitivity",
                 value = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
                 onClick = { openDialog = SettingsDialog.SENSITIVITY }
             )
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             SettingsRow(
                 label = "Auto Stop",
                 value = "$autoStopSeconds sec",
                 onClick = { openDialog = SettingsDialog.AUTO_STOP }
             )
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             SettingsRow(
                 label = "Sound Level Floor",
                 value = "$soundLevelFloorDb dB",
                 onClick = { openDialog = SettingsDialog.SOUND_FLOOR }
             )
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             // Rain behaviour — inline toggle
             Row(
@@ -187,14 +193,14 @@ fun SettingsScreen(
                     )
                 )
             }
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             SettingsRow(
                 label = "Battery Optimisation",
                 value = if (batteryOptimisationAllowed) "Allowed" else "Restricted",
                 onClick = onBatteryOptimisationClick
             )
-            HorizontalDivider(color = GlassFillStrong, thickness = 1.dp)
+            NeoPopRowDivider()
 
             SettingsRow(
                 label = "About Owlen",
@@ -204,6 +210,99 @@ fun SettingsScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Custom disturbances — user-enrolled sounds that trigger protection
+        SectionHeader(
+            text = "Custom Disturbances",
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .neoPopCard()
+        ) {
+            customPrototypes.forEach { prototype ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = prototype.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "${prototype.sampleCount} recordings",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    IconButton(
+                        onClick = { prototypePendingDelete = prototype },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Delete,
+                            contentDescription = "Delete ${prototype.name}",
+                            tint = TextSecondary
+                        )
+                    }
+                }
+                NeoPopRowDivider()
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToEnrollment)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Add custom sound",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Primary,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = null,
+                    tint = Primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+
+    prototypePendingDelete?.let { prototype ->
+        NeoPopDialog(
+            title = "Delete \"${prototype.name}\"?",
+            onDismiss = { prototypePendingDelete = null },
+            confirmText = "Delete",
+            onConfirm = {
+                onDeletePrototype(prototype.id)
+                prototypePendingDelete = null
+            },
+            dismissText = "Cancel",
+            confirmVariant = NeoPopButtonVariant.Danger
+        ) {
+            Text(
+                text = "Owlen will stop reacting to this sound.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary
+            )
+        }
     }
 
     when (openDialog) {
@@ -282,48 +381,30 @@ private fun OptionPickerDialog(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = GlassDialog,
-        titleContentColor = TextPrimary,
-        title = { Text(text = title, style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column {
-                options.forEachIndexed { index, option ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .selectable(
-                                selected = index == selectedIndex,
-                                onClick = { onSelect(index) }
-                            )
-                            .padding(vertical = 12.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = index == selectedIndex,
-                            onClick = { onSelect(index) },
-                            colors = RadioButtonDefaults.colors(
-                                selectedColor = Primary,
-                                unselectedColor = TextSecondary
-                            )
-                        )
-                        Text(
-                            text = option,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = TextPrimary
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = "Close", color = Primary)
+    NeoPopDialog(
+        title = title,
+        onDismiss = onDismiss,
+        dismissText = "Close"
+    ) {
+        options.forEachIndexed { index, option ->
+            val selected = index == selectedIndex
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(selected = selected, onClick = { onSelect(index) })
+                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                NeoPopRadio(selected = selected)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = option,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (selected) Primary else TextPrimary
+                )
             }
         }
-    )
+    }
 }
 
 @Composable
@@ -338,43 +419,27 @@ private fun SliderDialog(
 ) {
     var sliderValue by remember { mutableFloatStateOf(initialValue) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = GlassDialog,
-        titleContentColor = TextPrimary,
-        title = { Text(text = title, style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column {
-                Text(
-                    text = formatValue(sliderValue),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Slider(
-                    value = sliderValue,
-                    onValueChange = { sliderValue = it },
-                    valueRange = valueRange,
-                    steps = steps,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Primary,
-                        activeTrackColor = Primary,
-                        inactiveTrackColor = TextDisabled
-                    )
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(sliderValue) }) {
-                Text(text = "Save", color = Primary)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = "Cancel", color = TextSecondary)
-            }
-        }
-    )
+    NeoPopDialog(
+        title = title,
+        onDismiss = onDismiss,
+        confirmText = "Save",
+        onConfirm = { onConfirm(sliderValue) },
+        dismissText = "Cancel"
+    ) {
+        Text(
+            text = formatValue(sliderValue),
+            style = MaterialTheme.typography.bodyLarge,
+            color = Primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Slider(
+            value = sliderValue,
+            onValueChange = { sliderValue = it },
+            valueRange = valueRange,
+            steps = steps,
+            colors = neoPopSliderColors()
+        )
+    }
 }
 
 @Composable
@@ -383,35 +448,26 @@ private fun SettingsRow(
     value: String,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = TextPrimary,
-            modifier = Modifier.weight(1f)
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
-            )
-            Icon(
-                imageVector = Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(20.dp)
-            )
+    NeoPopRow(
+        title = label,
+        onClick = onClick,
+        trailing = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary
+                )
+                Icon(
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = null,
+                    tint = TextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
-    }
+    )
 }

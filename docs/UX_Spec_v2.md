@@ -311,6 +311,9 @@ Time picker style: Large digit display in `surfaceVar` card. Scrollable drum/spi
 │  ○  Brown Noise                 │  ← radio option
 │  ○  Pink Noise                  │
 │  ○  White Noise                 │
+│  ○  Fan                         │
+│  ○  Rain                        │
+│  ○  Ocean Waves                 │
 │                                 │
 │  [         Continue        ]    │
 └─────────────────────────────────┘
@@ -635,7 +638,7 @@ From the design — these are the product principles visible in the design image
 - Landscape orientation (lock to portrait)
 - Widgets
 - Dynamic colour (Material You)
-- Custom sounds beyond Brown/Pink/White Noise
+- User-imported/custom sound files (built-in set is Brown/Pink/White Noise, Fan, Rain, Ocean Waves)
 - Sleep tracking or wearable integration
 - Cloud sync or accounts
 - Language localisation

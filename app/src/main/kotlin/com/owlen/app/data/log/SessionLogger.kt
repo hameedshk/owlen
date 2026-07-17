@@ -23,7 +23,8 @@ data class EventLog(
     val action: String,
     val maskingSound: String? = null,
     val maskingVolume: Float? = null,
-    val durationMs: Long? = null
+    val durationMs: Long? = null,
+    val customLabel: String? = null
 )
 
 @Serializable
@@ -130,7 +131,8 @@ class SessionLogger @Inject constructor(private val context: Context) {
                     action = actionName,
                     maskingSound = maskingSound,
                     maskingVolume = maskingVolume,
-                    durationMs = maskingDurationMs
+                    durationMs = maskingDurationMs,
+                    customLabel = event.customLabel
                 )
 
                 session.events.add(eventLog)

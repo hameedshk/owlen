@@ -2,10 +2,12 @@ package com.owlen.app.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.owlen.app.data.prototypes.SoundPrototypeRepository
 import com.owlen.app.data.settings.SettingsRepository
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
 import com.owlen.app.domain.model.SleepSettings
+import com.owlen.app.domain.model.SoundPrototype
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,11 +17,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val prototypeRepository: SoundPrototypeRepository
 ) : ViewModel() {
 
     val settings: StateFlow<SleepSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SleepSettings.default())
+
+    val customPrototypes: StateFlow<List<SoundPrototype>> = prototypeRepository.prototypes
+
+    init {
+        viewModelScope.launch { prototypeRepository.load() }
+    }
+
+    fun deletePrototype(id: String) {
+        viewModelScope.launch { prototypeRepository.delete(id) }
+    }
 
     fun updateSleepWindow(startHour: Int, endHour: Int) {
         viewModelScope.launch { settingsRepository.updateSleepWindow(startHour, endHour) }

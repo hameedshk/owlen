@@ -16,14 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.MicOff
 import androidx.compose.material.icons.rounded.PhoneAndroid
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,17 +29,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.owlen.app.R
-import com.owlen.app.presentation.ui.theme.OnPrimary
+import com.owlen.app.presentation.ui.components.NeoPopButton
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.TextDisabled
-import com.owlen.app.presentation.ui.theme.glass
-import com.owlen.app.presentation.ui.theme.glow
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
+import com.owlen.app.presentation.ui.theme.neoPopCard
 import kotlinx.coroutines.launch
 
 private data class OnboardingPage(
@@ -78,9 +74,7 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState(pageCount = { onboardingPages.size })
     val scope = rememberCoroutineScope()
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
@@ -94,7 +88,7 @@ fun OnboardingScreen(
                 .padding(horizontal = 20.dp, vertical = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Dot indicators
+            // Hard-square dot indicators (CRED style)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -111,7 +105,7 @@ fun OnboardingScreen(
                             .width(dotWidth)
                             .background(
                                 color = if (selected) Primary else TextDisabled,
-                                shape = CircleShape
+                                shape = RectangleShape
                             )
                     )
                 }
@@ -119,7 +113,8 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
+            NeoPopButton(
+                text = if (pagerState.currentPage < onboardingPages.size - 1) "Next" else "Get Started",
                 onClick = {
                     if (pagerState.currentPage < onboardingPages.size - 1) {
                         scope.launch {
@@ -129,21 +124,8 @@ fun OnboardingScreen(
                         onNavigateToPermissions()
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .glow(Primary, 20.dp, alpha = 0.22f),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary,
-                    contentColor = OnPrimary
-                )
-            ) {
-                Text(
-                    text = if (pagerState.currentPage < onboardingPages.size - 1) "Next" else "Get Started",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -188,22 +170,13 @@ private fun OnboardingPage(page: OnboardingPage) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glass(RoundedCornerShape(12.dp))
+                    .neoPopCard()
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                PrivacyBadgeRow(
-                    icon = Icons.Rounded.MicOff,
-                    text = "Never recorded or stored"
-                )
-                PrivacyBadgeRow(
-                    icon = Icons.Rounded.PhoneAndroid,
-                    text = "Processed on this phone only"
-                )
-                PrivacyBadgeRow(
-                    icon = Icons.Rounded.CloudOff,
-                    text = "No internet, no cloud, no accounts"
-                )
+                PrivacyBadgeRow(icon = Icons.Rounded.MicOff, text = "Never recorded or stored")
+                PrivacyBadgeRow(icon = Icons.Rounded.PhoneAndroid, text = "Processed on this phone only")
+                PrivacyBadgeRow(icon = Icons.Rounded.CloudOff, text = "No internet, no cloud, no accounts")
             }
         }
     }

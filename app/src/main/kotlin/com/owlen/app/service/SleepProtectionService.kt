@@ -13,11 +13,15 @@ import com.owlen.app.data.log.SessionLogger
 import com.owlen.app.data.ml.EventDetector
 import com.owlen.app.data.ml.FeatureExtractor
 import com.owlen.app.data.ml.RmsCalculator
+import com.owlen.app.data.prototypes.SoundPrototypeRepository
 import com.owlen.app.data.settings.SettingsRepository
+import com.owlen.app.domain.matcher.CustomSoundMatcher
+import com.owlen.app.domain.matcher.EventArbiter
 import com.owlen.app.domain.model.DetectedEvent
 import com.owlen.app.domain.model.DisturbanceResult
 import com.owlen.app.domain.model.PolicyAction
 import com.owlen.app.domain.model.SleepSettings
+import com.owlen.app.domain.model.SoundPrototype
 import com.owlen.app.domain.policy.PolicyEngine
 import com.owlen.app.domain.scorer.DisturbanceScorer
 import dagger.hilt.android.AndroidEntryPoint
@@ -63,6 +67,15 @@ class SleepProtectionService : Service() {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
+    @Inject
+    lateinit var prototypeRepository: SoundPrototypeRepository
+
+    @Inject
+    lateinit var customSoundMatcher: CustomSoundMatcher
+
+    @Inject
+    lateinit var eventArbiter: EventArbiter
+
     private lateinit var notificationHelper: NotificationHelper
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -72,6 +85,9 @@ class SleepProtectionService : Service() {
     // State tracked across inference cycles
     @Volatile
     private var currentSettings: SleepSettings = SleepSettings.default()
+
+    @Volatile
+    private var currentPrototypes: List<SoundPrototype> = emptyList()
     private var isMaskingActive = false
     private var lowScoreStartTimeMs = 0L
     private var maskingStartTimeMs = 0L
@@ -112,6 +128,10 @@ class SleepProtectionService : Service() {
         }
         serviceScope.launch {
             settingsRepository.settings.collect { currentSettings = it }
+        }
+        serviceScope.launch {
+            prototypeRepository.load()
+            prototypeRepository.prototypes.collect { currentPrototypes = it }
         }
         serviceRepository.updateSessionStartTime(System.currentTimeMillis())
     }
@@ -178,10 +198,22 @@ class SleepProtectionService : Service() {
                 val settings = currentSettings
 
                 // Run inference on IO dispatcher
-                val scores = withContext(Dispatchers.IO) {
+                val extraction = withContext(Dispatchers.IO) {
                     featureExtractor.extract(pcmWindow)
                 }
-                val event = eventDetector.detect(scores)
+                val detected = eventDetector.detect(extraction.scores)
+
+                // Custom enrolled sounds — never consulted when a safety event
+                // is detected; safety wins unconditionally
+                val prototypes = currentPrototypes
+                val event = if (detected.isSafetyEvent || prototypes.isEmpty()) {
+                    detected
+                } else {
+                    withContext(Dispatchers.Default) {
+                        val match = customSoundMatcher.match(extraction.embedding, prototypes)
+                        eventArbiter.arbitrate(detected, match)
+                    }
+                }
 
                 // Calculate sound level
                 val dBSPL = RmsCalculator.calculate(pcmWindow)

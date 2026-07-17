@@ -27,11 +27,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.owlen.app.R
-import com.owlen.app.presentation.ui.theme.AmbientBackground
-import com.owlen.app.presentation.ui.theme.Primary
+import com.owlen.app.presentation.ui.theme.MatteBackground
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.glow
 import kotlinx.coroutines.delay
 
 @Composable
@@ -60,8 +58,7 @@ fun SplashScreen(
         label = "contentAlpha"
     )
 
-    // Stronger orbs on the splash for a richer first impression
-    AmbientBackground(orbIntensity = 1.8f) {
+    MatteBackground {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -76,7 +73,6 @@ fun SplashScreen(
                 modifier = Modifier
                     .size(120.dp)
                     .scale(mascotScale)
-                    .glow(Primary, 56.dp, alpha = 0.16f)
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(

@@ -146,6 +146,7 @@ class DisturbanceScorerTest {
             EventClass.CONSTRUCTION to 85,
             EventClass.RAIN to 20,
             EventClass.THUNDER to 50,
+            EventClass.CUSTOM to 75,
             EventClass.UNKNOWN to 40
         )
 
@@ -159,5 +160,35 @@ class DisturbanceScorerTest {
             val result = scorer.score(event, 70f, 23, defaultSettings)
             assertEquals("Event $eventClass should have weight $expectedWeight", expectedWeight, result.eventWeight)
         }
+    }
+
+    @Test
+    fun testCustomEventScoresThroughNormalLadder() {
+        val event = DetectedEvent(
+            eventClass = EventClass.CUSTOM,
+            confidence = 0.92f,
+            isSafetyEvent = false,
+            timestampMs = System.currentTimeMillis(),
+            customLabel = "Bedroom door"
+        )
+        // 80 dB, floor 50 → norm 75; hour 23 in sleep window → time 100
+        // Score = (75 × 0.5) + (75 × 0.3) + (100 × 0.2) = 37.5 + 22.5 + 20 = 80
+        val result = scorer.score(event, 80f, 23, defaultSettings)
+        assertEquals(80, result.score)
+        assertFalse(result.isSafetyBypass)
+    }
+
+    @Test
+    fun testCustomEventNeverTriggersSafetyBypass() {
+        val event = DetectedEvent(
+            eventClass = EventClass.CUSTOM,
+            confidence = 1.0f, // even at maximum confidence
+            isSafetyEvent = false,
+            timestampMs = System.currentTimeMillis(),
+            customLabel = "Bedroom door"
+        )
+        val result = scorer.score(event, 100f, 23, defaultSettings)
+        assertFalse(result.isSafetyBypass)
+        assertTrue(result.score < 100)
     }
 }

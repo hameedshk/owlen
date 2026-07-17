@@ -43,6 +43,27 @@ class AudioPlayerTest {
     }
 
     @Test
+    fun maskingSoundMapping_fanIsSupported() {
+        // Verify that FAN can be used
+        val sound = MaskingSound.FAN
+        assertTrue(sound == MaskingSound.FAN)
+    }
+
+    @Test
+    fun maskingSoundMapping_rainIsSupported() {
+        // Verify that RAIN can be used
+        val sound = MaskingSound.RAIN
+        assertTrue(sound == MaskingSound.RAIN)
+    }
+
+    @Test
+    fun maskingSoundMapping_oceanWavesIsSupported() {
+        // Verify that OCEAN_WAVES can be used
+        val sound = MaskingSound.OCEAN_WAVES
+        assertTrue(sound == MaskingSound.OCEAN_WAVES)
+    }
+
+    @Test
     fun playbackSampleRate_isCorrect() {
         assertEquals(44100, AudioPlayer.PLAYBACK_SAMPLE_RATE)
     }

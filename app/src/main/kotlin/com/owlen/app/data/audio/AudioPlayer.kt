@@ -22,34 +22,30 @@ class AudioPlayer : Closeable {
         const val MINIMUM_MASKING_DURATION_MS = 30_000L
     }
 
-    private val brownNoiseBuffer: ShortArray
-    private val pinkNoiseBuffer: ShortArray
-    private val whiteNoiseBuffer: ShortArray
+    private val noiseBuffers = mutableMapOf<MaskingSound, ShortArray>()
 
     private var audioTrack: AudioTrack? = null
     private var startMaskingTimeMs: Long = 0L
     private var currentVolume: Float = 0f
 
-    init {
-        brownNoiseBuffer = NoiseGenerator.generateBrownNoise()
-        pinkNoiseBuffer = NoiseGenerator.generatePinkNoise()
-        whiteNoiseBuffer = NoiseGenerator.generateWhiteNoise()
-    }
+    // Buffers are synthesized on first use (on Dispatchers.Default via
+    // startMasking) rather than eagerly, so construction stays cheap
+    private fun bufferFor(sound: MaskingSound): ShortArray =
+        noiseBuffers.getOrPut(sound) {
+            when (sound) {
+                MaskingSound.BROWN_NOISE -> NoiseGenerator.generateBrownNoise()
+                MaskingSound.PINK_NOISE -> NoiseGenerator.generatePinkNoise()
+                MaskingSound.WHITE_NOISE -> NoiseGenerator.generateWhiteNoise()
+                MaskingSound.FAN -> NoiseGenerator.generateFan()
+                MaskingSound.RAIN -> NoiseGenerator.generateRain()
+                MaskingSound.OCEAN_WAVES -> NoiseGenerator.generateOceanWaves()
+            }
+        }
 
     suspend fun startMasking(sound: MaskingSound, volume: Float, maxVolume: Float) {
         withContext(Dispatchers.Default) {
             val cappedVolume = volume.coerceAtMost(maxVolume)
-            val noiseBuffer = when (sound) {
-                MaskingSound.BROWN_NOISE -> brownNoiseBuffer
-                MaskingSound.PINK_NOISE -> pinkNoiseBuffer
-                MaskingSound.WHITE_NOISE -> whiteNoiseBuffer
-            }
-
-            val bufferSize = AudioTrack.getMinBufferSize(
-                PLAYBACK_SAMPLE_RATE,
-                CHANNEL_CONFIG,
-                AUDIO_FORMAT
-            )
+            val noiseBuffer = bufferFor(sound)
 
             audioTrack = AudioTrack.Builder()
                 .setAudioAttributes(

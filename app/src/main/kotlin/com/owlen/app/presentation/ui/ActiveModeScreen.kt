@@ -10,7 +10,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +23,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Icon
@@ -40,11 +38,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,11 +51,11 @@ import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.GreenDim
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.PrimaryDim
+import com.owlen.app.presentation.ui.theme.SurfaceSunken
 import com.owlen.app.presentation.ui.theme.TextPrimary
-import com.owlen.app.presentation.ui.theme.glass
-import com.owlen.app.presentation.ui.theme.glow
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
+import com.owlen.app.presentation.ui.theme.neoPopCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -68,7 +65,6 @@ import java.util.Locale
 private const val DIM_AFTER_MS = 10_000L
 private const val HOLD_TO_STOP_MS = 1_200
 
-// BRD battery budget: <= 8% over 8 hours of protection
 private const val DRAIN_PCT_PER_HOUR = 1.0f
 
 @Composable
@@ -80,7 +76,6 @@ fun ActiveModeScreen(
     statusText: String = "Monitoring...",
     onStopProtection: () -> Unit = {}
 ) {
-    // Night dim: fade to a near-black minimal UI after inactivity; tap to wake
     var dimmed by remember { mutableStateOf(false) }
     var wakeKey by remember { mutableIntStateOf(0) }
 
@@ -92,8 +87,6 @@ fun ActiveModeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // Night dim covers the ambient glow with solid near-black —
-            // the screen must not light the room
             .then(if (dimmed) Modifier.background(Background) else Modifier)
             .pointerInput(dimmed) {
                 if (dimmed) {
@@ -123,8 +116,9 @@ fun ActiveModeScreen(
 }
 
 /**
- * Minimal low-luminance face for a dark bedroom: dim clock, faint shield.
- * No white or bright pixels — the screen should not light the room.
+ * Minimal low-luminance face for a dark bedroom.
+ * No white or bright pixels — the screen must not light the room.
+ * No dot grid here — battery constraint.
  */
 @Composable
 private fun DimmedNightFace(statusText: String) {
@@ -179,26 +173,17 @@ private fun ActiveModeContent(
     onInteraction: () -> Unit,
     onStopProtection: () -> Unit
 ) {
-    // Shield pulse animation
-    val infiniteTransition = rememberInfiniteTransition(label = "shield_pulse")
-    val shieldScale by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shield_scale"
-    )
+    val infiniteTransition = rememberInfiniteTransition(label = "active_pulse")
 
-    // Expanding halo pulse behind the shield — a calm "breathing" beat
-    val halo by infiniteTransition.animateFloat(
-        initialValue = 0f,
+    // Slow stroke-alpha pulse on the shield plate (no scale, no glow)
+    val strokeAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = FastOutSlowInEasing)
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
         ),
-        label = "shield_halo"
+        label = "shield_stroke"
     )
 
     val startTimeFormatted = remember(sessionStartTimeMs) {
@@ -207,7 +192,6 @@ private fun ActiveModeContent(
 
     val lowBattery = batteryPercent < 20
 
-    // Projection at wake time, using the BRD drain budget (~1%/h)
     val (projectedAtWake, wakeTimeFormatted) = remember(batteryPercent, wakeTimeHour, wakeTimeMinute) {
         val now = java.util.Calendar.getInstance()
         val nowMinutes = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE)
@@ -231,27 +215,18 @@ private fun ActiveModeContent(
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
-        // Green shield
+        // Square shield plate with pulsing green stroke (no scale, no glow)
         Box(
             modifier = Modifier
-                .size(80.dp)
-                .scale(shieldScale)
-                .glow(Green, 32.dp, alpha = 0.20f)
-                .drawBehind {
-                    val radius = size.maxDimension / 2f * (0.8f + 0.9f * halo)
-                    drawCircle(
-                        color = Green.copy(alpha = (1f - halo) * 0.16f),
-                        radius = radius,
-                        center = center
-                    )
-                },
+                .size(96.dp)
+                .neoPopCard(fill = Green.copy(alpha = 0.12f), stroke = Green.copy(alpha = strokeAlpha)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Rounded.Shield,
                 contentDescription = "Protection active",
                 tint = Green,
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(64.dp)
             )
         }
 
@@ -277,7 +252,7 @@ private fun ActiveModeContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .glass(RoundedCornerShape(12.dp))
+                .neoPopCard()
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -287,7 +262,7 @@ private fun ActiveModeContent(
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextPrimary
             )
-            EqualizerBars(color = Green)
+            EqualizerBars(color = Primary)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -296,7 +271,7 @@ private fun ActiveModeContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .glass(RoundedCornerShape(12.dp))
+                .neoPopCard()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -357,7 +332,7 @@ private fun ActiveModeContent(
     }
 }
 
-/** Gently dancing bars signalling live listening — calmer than a blinking dot. */
+/** Hard amber bars signalling live listening. */
 @Composable
 private fun EqualizerBars(
     color: Color,
@@ -386,16 +361,14 @@ private fun EqualizerBars(
                 modifier = Modifier
                     .width(3.dp)
                     .fillMaxHeight(level.value)
-                    .background(color, RoundedCornerShape(1.5.dp))
+                    .background(color, RectangleShape)
             )
         }
     }
 }
 
 /**
- * Press-and-hold stop control. Amber, not safety red — red is reserved for
- * Baby Cry / Smoke Alarm. Holding fills the button; releasing early cancels,
- * so a groggy fumble at 3 AM can't kill protection.
+ * Press-and-hold stop control. Amber face fill — red is reserved for Baby Cry / Smoke Alarm.
  */
 @Composable
 private fun HoldToStopButton(
@@ -410,8 +383,7 @@ private fun HoldToStopButton(
     Box(
         modifier = modifier
             .height(64.dp)
-            .glass(RoundedCornerShape(12.dp))
-            .border(2.dp, Primary, RoundedCornerShape(12.dp))
+            .neoPopCard(fill = SurfaceSunken, stroke = Primary)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {

@@ -10,6 +10,7 @@ enum class EventClass(val displayName: String) {
     THUNDER("Thunder"),
     BABY_CRY("Baby Cry"),
     SMOKE_ALARM("Smoke Alarm"),
+    CUSTOM("Custom Sound"),
     UNKNOWN("Unknown");
 
     val isSafetyEvent: Boolean

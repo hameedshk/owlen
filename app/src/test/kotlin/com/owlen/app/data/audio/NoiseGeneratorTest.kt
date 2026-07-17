@@ -72,4 +72,84 @@ class NoiseGeneratorTest {
         val hasNonZero = buffer.any { it != 0.toShort() }
         assertTrue(hasNonZero)
     }
+
+    @Test
+    fun generateFan_returnsCorrectSize() {
+        val buffer = NoiseGenerator.generateFan()
+        assertEquals(EXPECTED_BUFFER_SIZE, buffer.size)
+    }
+
+    @Test
+    fun generateFan_bufferNotAllZeros() {
+        val buffer = NoiseGenerator.generateFan()
+        val hasNonZero = buffer.any { it != 0.toShort() }
+        assertTrue(hasNonZero)
+    }
+
+    @Test
+    fun generateFan_hasLessHighFrequencyEnergyThanWhiteNoise() {
+        // Fan is low-passed, so its mean sample-to-sample jump (a proxy for
+        // high-frequency content) should be far below white noise's
+        val fanDelta = meanAbsDelta(NoiseGenerator.generateFan())
+        val whiteDelta = meanAbsDelta(NoiseGenerator.generateWhiteNoise())
+        assertTrue(fanDelta < whiteDelta / 2)
+    }
+
+    @Test
+    fun generateRain_returnsCorrectSize() {
+        val buffer = NoiseGenerator.generateRain()
+        assertEquals(EXPECTED_BUFFER_SIZE, buffer.size)
+    }
+
+    @Test
+    fun generateRain_bufferNotAllZeros() {
+        val buffer = NoiseGenerator.generateRain()
+        val hasNonZero = buffer.any { it != 0.toShort() }
+        assertTrue(hasNonZero)
+    }
+
+    @Test
+    fun generateOceanWaves_returnsCorrectSize() {
+        val buffer = NoiseGenerator.generateOceanWaves()
+        assertEquals(EXPECTED_BUFFER_SIZE, buffer.size)
+    }
+
+    @Test
+    fun generateOceanWaves_bufferNotAllZeros() {
+        val buffer = NoiseGenerator.generateOceanWaves()
+        val hasNonZero = buffer.any { it != 0.toShort() }
+        assertTrue(hasNonZero)
+    }
+
+    @Test
+    fun generateOceanWaves_troughsAtLoopBoundaryAndCrestsMidBuffer() {
+        val buffer = NoiseGenerator.generateOceanWaves()
+        val windowSize = 11025  // 250 ms at 44.1 kHz
+
+        val startRms = rms(buffer, 0, windowSize)
+        val endRms = rms(buffer, buffer.size - windowSize, buffer.size)
+        val crestRms = rms(buffer, (buffer.size - windowSize) / 2, (buffer.size + windowSize) / 2)
+
+        // The wave crest (mid-buffer) must be clearly louder than the trough
+        // at both ends, so the loop point sits in the quiet part of the wave
+        assertTrue(crestRms > startRms * 2)
+        assertTrue(crestRms > endRms * 2)
+    }
+
+    private fun rms(buffer: ShortArray, from: Int, to: Int): Double {
+        var sumSquares = 0.0
+        for (i in from until to) {
+            val sample = buffer[i].toDouble()
+            sumSquares += sample * sample
+        }
+        return kotlin.math.sqrt(sumSquares / (to - from))
+    }
+
+    private fun meanAbsDelta(buffer: ShortArray): Double {
+        var sum = 0.0
+        for (i in 1 until buffer.size) {
+            sum += kotlin.math.abs(buffer[i] - buffer[i - 1]).toDouble()
+        }
+        return sum / (buffer.size - 1)
+    }
 }

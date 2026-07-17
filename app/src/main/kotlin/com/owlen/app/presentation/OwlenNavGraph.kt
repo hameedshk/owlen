@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -48,11 +49,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.owlen.app.domain.model.EventClass
 import com.owlen.app.presentation.calibration.CalibrationViewModel
+import com.owlen.app.presentation.enrollment.EnrollmentViewModel
 import com.owlen.app.presentation.home.HomeViewModel
 import com.owlen.app.presentation.session.SessionViewModel
 import com.owlen.app.presentation.settings.SettingsViewModel
 import com.owlen.app.presentation.ui.ActiveModeScreen
 import com.owlen.app.presentation.ui.CalibrationScreen
+import com.owlen.app.presentation.ui.EnrollmentScreen
 import com.owlen.app.presentation.ui.EventDetectedOverlay
 import com.owlen.app.presentation.ui.HomeScreen
 import com.owlen.app.presentation.ui.MorningSummaryScreen
@@ -63,12 +66,10 @@ import com.owlen.app.presentation.ui.SessionDetailsScreen
 import com.owlen.app.presentation.ui.SettingsScreen
 import com.owlen.app.presentation.ui.SetupScreen
 import com.owlen.app.presentation.ui.SplashScreen
-import com.owlen.app.presentation.ui.theme.AmbientBackground
-import com.owlen.app.presentation.ui.theme.GlassBorder
-import com.owlen.app.presentation.ui.theme.GlassFill
-import com.owlen.app.presentation.ui.theme.GlassFillStrong
-import com.owlen.app.presentation.ui.theme.GlassTint
+import com.owlen.app.presentation.ui.theme.Background
+import com.owlen.app.presentation.ui.theme.MatteBackground
 import com.owlen.app.presentation.ui.theme.Primary
+import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.util.BatteryOptimization
 import com.owlen.app.service.ServiceState
@@ -87,6 +88,7 @@ private object Routes {
     const val MORNING_SUMMARY = "morning_summary"
     const val SESSION_DETAILS = "session_details"
     const val SETTINGS = "settings"
+    const val ENROLLMENT = "enrollment"
 }
 
 private sealed class BottomTab(
@@ -135,8 +137,8 @@ fun OwlenNavGraph(
         }
     }
 
-    // Keep the backdrop still during overnight monitoring — no motion, no extra draw work
-    AmbientBackground(animated = currentRoute != Routes.ACTIVE_MODE) {
+    // No grid texture during overnight monitoring — keep the panel truly black
+    MatteBackground(showGrid = currentRoute != Routes.ACTIVE_MODE) {
         Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
@@ -145,11 +147,10 @@ fun OwlenNavGraph(
                     containerColor = Color.Transparent,
                     tonalElevation = 0.dp,
                     modifier = Modifier
-                        .background(GlassTint.copy(alpha = 0.55f))
-                        .background(GlassFill)
+                        .background(Background)
                         .drawBehind {
                             drawLine(
-                                color = GlassBorder,
+                                color = Stroke,
                                 start = Offset.Zero,
                                 end = Offset(size.width, 0f),
                                 strokeWidth = 1.dp.toPx()
@@ -179,14 +180,17 @@ fun OwlenNavGraph(
                                 )
                             },
                             label = {
-                                Text(text = tab.label)
+                                Text(
+                                    text = tab.label.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
                             },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = Primary,
                                 selectedTextColor = Primary,
                                 unselectedIconColor = TextSecondary,
                                 unselectedTextColor = TextSecondary,
-                                indicatorColor = GlassFillStrong
+                                indicatorColor = Color.Transparent
                             )
                         )
                     }
@@ -461,6 +465,8 @@ fun OwlenNavGraph(
                     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
                 }
 
+                val customPrototypes by settingsViewModel.customPrototypes.collectAsState()
+
                 SettingsScreen(
                     sleepHour = settings.sleepWindowStartHour,
                     wakeHour = settings.wakeTimeHour,
@@ -471,6 +477,9 @@ fun OwlenNavGraph(
                     rainBehaviourEnabled = settings.rainBehaviourEnabled,
                     soundLevelFloorDb = settings.soundLevelFloor.toInt(),
                     batteryOptimisationAllowed = batteryExempt,
+                    customPrototypes = customPrototypes,
+                    onNavigateToEnrollment = { navController.navigate(Routes.ENROLLMENT) },
+                    onDeletePrototype = { settingsViewModel.deletePrototype(it) },
                     onNavigateToSleepSchedule = { navController.navigate(Routes.SETUP) },
                     onSoundSelected = { settingsViewModel.updatePreferredSound(it) },
                     onMaxVolumeChanged = { settingsViewModel.updateMaxVolume(it / 100f) },
@@ -481,6 +490,30 @@ fun OwlenNavGraph(
                     onBatteryOptimisationClick = {
                         if (!batteryExempt) BatteryOptimization.requestExemption(context)
                     }
+                )
+            }
+
+            composable(Routes.ENROLLMENT) {
+                val enrollmentViewModel: EnrollmentViewModel = hiltViewModel()
+                val uiState by enrollmentViewModel.uiState.collectAsState()
+                val monitoringActive by enrollmentViewModel.isMonitoringActive.collectAsState()
+
+                EnrollmentScreen(
+                    name = uiState.name,
+                    takesCompleted = uiState.takesCompleted,
+                    phase = uiState.phase,
+                    liveDb = uiState.liveDb,
+                    monitoringActive = monitoringActive,
+                    onNameChanged = { enrollmentViewModel.onNameChanged(it) },
+                    onRecordTake = {
+                        if (hasMicPermission(context)) {
+                            enrollmentViewModel.recordTake()
+                        } else {
+                            navController.navigate(Routes.PERMISSIONS)
+                        }
+                    },
+                    onRestart = { enrollmentViewModel.restart() },
+                    onDone = { navController.popBackStack() }
                 )
             }
         }

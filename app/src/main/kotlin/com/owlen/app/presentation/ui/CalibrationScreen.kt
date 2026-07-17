@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,13 +32,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.owlen.app.presentation.ui.theme.GlassBorder
-import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
+import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
-import com.owlen.app.presentation.ui.theme.glow
+import com.owlen.app.presentation.ui.components.NeoPopButton
+import com.owlen.app.presentation.ui.components.NeoPopButtonVariant
 import kotlinx.coroutines.delay
 
 private const val CALIBRATION_SECONDS = 60
@@ -98,11 +97,8 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Circular countdown
         Box(
-            modifier = Modifier
-                .size(160.dp)
-                .glow(Green, 32.dp, alpha = 0.14f),
+            modifier = Modifier.size(160.dp),
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.size(160.dp)) {
@@ -115,7 +111,7 @@ fun CalibrationScreen(
 
                 // Track ring
                 drawArc(
-                    color = GlassBorder,
+                    color = Stroke,
                     startAngle = -90f,
                     sweepAngle = 360f,
                     useCenter = false,
@@ -126,7 +122,7 @@ fun CalibrationScreen(
 
                 // Progress ring (anticlockwise drain = negative sweep)
                 drawArc(
-                    color = Green,
+                    color = Primary,
                     startAngle = -90f,
                     sweepAngle = -animatedSweep,
                     useCenter = false,
@@ -182,14 +178,12 @@ fun CalibrationScreen(
                 color = Warning,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextButton(onClick = onRetry) {
-                Text(
-                    text = "Retry",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Primary
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
+            NeoPopButton(
+                text = "Retry",
+                onClick = onRetry,
+                variant = NeoPopButtonVariant.Secondary
+            )
         } else {
             Text(
                 text = "Keep your phone nearby\nand stay quiet.",
@@ -201,12 +195,10 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TextButton(onClick = onSkip) {
-            Text(
-                text = "Skip — use default level",
-                style = MaterialTheme.typography.labelLarge,
-                color = TextSecondary
-            )
-        }
+        NeoPopButton(
+            text = "Skip — use default level",
+            onClick = onSkip,
+            variant = NeoPopButtonVariant.Secondary
+        )
     }
 }

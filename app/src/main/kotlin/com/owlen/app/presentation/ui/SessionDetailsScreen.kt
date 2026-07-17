@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.domain.model.EventClass
 import com.owlen.app.domain.model.MaskingSound
-import com.owlen.app.presentation.ui.theme.GlassFillStrong
 import com.owlen.app.presentation.ui.theme.Green
+import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
@@ -107,7 +107,7 @@ fun SessionDetailsScreen(
                 items(events) { event ->
                     SessionEventRow(event = event)
                     HorizontalDivider(
-                        color = GlassFillStrong,
+                        color = Stroke,
                         thickness = 1.dp,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )

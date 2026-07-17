@@ -66,6 +66,7 @@ class DisturbanceScorer {
         EventClass.CONSTRUCTION -> 85
         EventClass.RAIN -> 20
         EventClass.THUNDER -> 50
+        EventClass.CUSTOM -> 75 // User-enrolled — high personal salience, never force-triggers
         EventClass.UNKNOWN -> 40
         EventClass.BABY_CRY -> 100 // Safety event
         EventClass.SMOKE_ALARM -> 100 // Safety event

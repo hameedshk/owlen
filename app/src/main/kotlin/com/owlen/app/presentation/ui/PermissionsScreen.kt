@@ -21,14 +21,13 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -44,15 +42,13 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.owlen.app.presentation.util.BatteryOptimization
-import com.owlen.app.presentation.ui.theme.GlassFillStrong
+import com.owlen.app.presentation.ui.components.NeoPopButton
 import com.owlen.app.presentation.ui.theme.Green
-import com.owlen.app.presentation.ui.theme.OnPrimary
 import com.owlen.app.presentation.ui.theme.Primary
-import com.owlen.app.presentation.ui.theme.SurfaceVar
+import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.glass
-import com.owlen.app.presentation.ui.theme.glow
+import com.owlen.app.presentation.ui.theme.neoPopCard
 
 @Composable
 fun PermissionsScreen(
@@ -70,7 +66,6 @@ fun PermissionsScreen(
     }
     var batteryGranted by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
 
-    // The battery exemption dialog returns no result — re-check when we come back
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -90,20 +85,14 @@ fun PermissionsScreen(
         microphoneGranted = granted
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top bar with back + progress
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.size(48.dp)
-            ) {
+            IconButton(onClick = onNavigateBack, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = Icons.Rounded.ArrowBack,
                     contentDescription = "Back",
@@ -118,7 +107,7 @@ fun PermissionsScreen(
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
                 color = Green,
-                trackColor = GlassFillStrong
+                trackColor = Stroke
             )
             Spacer(modifier = Modifier.width(16.dp))
         }
@@ -144,7 +133,6 @@ fun PermissionsScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Microphone permission row
             PermissionRow(
                 icon = {
                     Icon(
@@ -157,14 +145,11 @@ fun PermissionsScreen(
                 title = "Microphone",
                 description = "Listen for environmental sounds.",
                 isGranted = microphoneGranted,
-                onClick = {
-                    micLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                }
+                onClick = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Battery optimization row
             PermissionRow(
                 icon = {
                     Icon(
@@ -177,11 +162,7 @@ fun PermissionsScreen(
                 title = "Ignore Battery Optimisation",
                 description = "Keep Owlen running through the night.",
                 isGranted = batteryGranted,
-                onClick = {
-                    if (!batteryGranted) {
-                        BatteryOptimization.requestExemption(context)
-                    }
-                }
+                onClick = { if (!batteryGranted) BatteryOptimization.requestExemption(context) }
             )
 
             if (!batteryGranted) {
@@ -194,35 +175,17 @@ fun PermissionsScreen(
             }
         }
 
-        // Continue button
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 32.dp)
         ) {
-            Button(
+            NeoPopButton(
+                text = "Continue",
                 onClick = onNavigateToSetup,
                 enabled = microphoneGranted,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .then(
-                        if (microphoneGranted) Modifier.glow(Primary, 20.dp, alpha = 0.22f)
-                        else Modifier
-                    ),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary,
-                    contentColor = OnPrimary,
-                    disabledContainerColor = SurfaceVar,
-                    disabledContentColor = TextSecondary
-                )
-            ) {
-                Text(
-                    text = "Continue",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -238,13 +201,11 @@ private fun PermissionRow(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glass(RoundedCornerShape(12.dp), fill = GlassFillStrong)
+            .neoPopCard()
             .clickable(onClick = onClick)
             .padding(16.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             icon()
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {

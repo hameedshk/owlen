@@ -10,23 +10,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BabyChangingStation
 import androidx.compose.material.icons.rounded.NotificationImportant
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.owlen.app.domain.model.EventClass
+import com.owlen.app.presentation.ui.theme.NeoPopPlate
 import com.owlen.app.presentation.ui.theme.Safety
 import com.owlen.app.presentation.ui.theme.SafetyDim
+import com.owlen.app.presentation.ui.theme.SafetyEdge
+import com.owlen.app.presentation.ui.theme.SafetyEdgeDeep
 import com.owlen.app.presentation.ui.theme.TextPrimary
 
 @Composable
@@ -50,7 +51,6 @@ fun SafetyAlertScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Alert icon
             Icon(
                 imageVector = if (isBabyCry) Icons.Rounded.BabyChangingStation else Icons.Rounded.NotificationImportant,
                 contentDescription = alertText,
@@ -78,21 +78,21 @@ fun SafetyAlertScreen(
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            // Dismiss button
-            Button(
+            NeoPopPlate(
                 onClick = onDismiss,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Safety,
-                    contentColor = TextPrimary
-                )
+                faceColor = Color.White,
+                edgeRight = SafetyEdge,
+                edgeBottom = SafetyEdgeDeep,
+                strokeColor = Safety,
+                depth = 6.dp
             ) {
                 Text(
-                    text = "Dismiss",
-                    style = MaterialTheme.typography.labelLarge
+                    text = "DISMISS",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Safety
                 )
             }
         }

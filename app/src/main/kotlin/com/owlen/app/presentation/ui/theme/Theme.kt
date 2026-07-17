@@ -35,12 +35,14 @@ val OwlenTypography = Typography(
     headlineLarge = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Bold,
-        fontSize = 32.sp
+        fontSize = 32.sp,
+        letterSpacing = (-0.5).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 24.sp
+        fontSize = 24.sp,
+        letterSpacing = (-0.5).sp
     ),
     titleLarge = TextStyle(
         fontFamily = InterFontFamily,
@@ -64,27 +66,35 @@ val OwlenTypography = Typography(
     ),
     labelLarge = TextStyle(
         fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp
+        fontWeight = FontWeight.Bold,
+        fontSize = 13.sp,
+        letterSpacing = 2.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        letterSpacing = 1.5.sp
     ),
     labelSmall = TextStyle(
         fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 10.sp,
+        letterSpacing = 2.5.sp
     )
 )
 
 private val OwlenColorScheme = darkColorScheme(
     background = Background,
-    surface = Surface,
-    surfaceVariant = SurfaceVar,
+    surface = SurfaceCard,
+    surfaceVariant = SurfaceSunken,
     primary = Primary,
     onPrimary = OnPrimary,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     onSurfaceVariant = TextSecondary,
-    outline = GlassBorder,
-    outlineVariant = GlassBorderDim,
+    outline = Stroke,
+    outlineVariant = Stroke,
 )
 
 @Composable

@@ -4,5 +4,6 @@ data class DetectedEvent(
     val eventClass: EventClass,
     val confidence: Float,
     val isSafetyEvent: Boolean,
-    val timestampMs: Long
+    val timestampMs: Long,
+    val customLabel: String? = null
 )
