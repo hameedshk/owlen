@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.BatteryManager
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -162,7 +165,24 @@ fun OwlenNavGraph(
                             it.route == tab.route
                         } == true
 
+                        // Amber indicator bar along the top edge of the active tab
+                        val indicatorAlpha by animateFloatAsState(
+                            targetValue = if (selected) 1f else 0f,
+                            animationSpec = tween(200),
+                            label = "navIndicator"
+                        )
+
                         NavigationBarItem(
+                            modifier = Modifier.drawBehind {
+                                if (indicatorAlpha > 0f) {
+                                    val barWidth = size.width * 0.5f
+                                    drawRect(
+                                        color = Primary.copy(alpha = indicatorAlpha),
+                                        topLeft = Offset((size.width - barWidth) / 2f, 0f),
+                                        size = Size(barWidth, 2.dp.toPx())
+                                    )
+                                }
+                            },
                             selected = selected,
                             onClick = {
                                 // Tabs are single screens — no per-tab stack to save/restore.

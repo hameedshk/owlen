@@ -45,6 +45,7 @@ import com.owlen.app.presentation.ui.components.NeoPopRow
 import com.owlen.app.presentation.ui.components.NeoPopRowDivider
 import com.owlen.app.presentation.ui.components.SectionHeader
 import com.owlen.app.presentation.ui.components.neoPopSliderColors
+import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.TextDisabled
@@ -101,19 +102,26 @@ fun SettingsScreen(
             .verticalScroll(rememberScrollState())
     ) {
         // Header
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 24.dp)
         ) {
             Text(
+                text = "PREFERENCES",
+                style = MaterialTheme.typography.labelSmall,
+                color = TextSecondary
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
                 text = "Settings",
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.headlineMedium,
                 color = TextPrimary
             )
         }
 
         // Settings list card
+        FadeSlideIn {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -208,10 +216,13 @@ fun SettingsScreen(
                 onClick = onNavigateToAbout
             )
         }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Custom disturbances — user-enrolled sounds that trigger protection
+        FadeSlideIn(delayMillis = 150) {
+        Column {
         SectionHeader(
             text = "Custom Disturbances",
             modifier = Modifier.padding(horizontal = 20.dp)
@@ -280,6 +291,8 @@ fun SettingsScreen(
                     modifier = Modifier.size(20.dp)
                 )
             }
+        }
+        }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

@@ -28,6 +28,17 @@ class DisturbanceScorer {
             )
         }
 
+        // Alarm clock: never mask over the user's wake-up alarm
+        if (event.eventClass == EventClass.ALARM_CLOCK) {
+            return DisturbanceResult(
+                score = 0,
+                eventWeight = eventWeight,
+                normSoundLevel = 0,
+                timeWeight = 100,
+                isSafetyBypass = false
+            )
+        }
+
         // Safety bypass: return immediately without scoring
         if (isSafetyBypass) {
             return DisturbanceResult(
@@ -59,17 +70,32 @@ class DisturbanceScorer {
     }
 
     private fun getEventWeight(event: EventClass): Int = when (event) {
+        EventClass.AIRCRAFT -> 55
+        EventClass.ALARM_CLOCK -> 0
+        EventClass.BIRD -> 30
+        EventClass.CAR_ALARM -> 80
+        EventClass.CAR_HORN -> 80
+        EventClass.CAT -> 45
+        EventClass.CONSTRUCTION -> 85
+        EventClass.DOG_BARKING -> 60
+        EventClass.DOOR_KNOCK -> 70
+        EventClass.FIREWORKS -> 90
         EventClass.GARBAGE_COLLECTION -> 80
+        EventClass.GLASS_BREAK -> 85
         EventClass.HUMAN_SHOUTING -> 90
         EventClass.MOTORCYCLE -> 75
-        EventClass.DOG_BARKING -> 60
-        EventClass.CONSTRUCTION -> 85
+        EventClass.MUSIC -> 55
         EventClass.RAIN -> 20
+        EventClass.SIREN -> 85
+        EventClass.SNORING -> 20
+        EventClass.SPEECH -> 45
         EventClass.THUNDER -> 50
-        EventClass.CUSTOM -> 75 // User-enrolled — high personal salience, never force-triggers
-        EventClass.UNKNOWN -> 40
-        EventClass.BABY_CRY -> 100 // Safety event
-        EventClass.SMOKE_ALARM -> 100 // Safety event
+        EventClass.TRAFFIC -> 40
+        EventClass.WIND -> 15
+        EventClass.BABY_CRY -> 100
+        EventClass.SMOKE_ALARM -> 100
+        EventClass.CUSTOM -> 75
+        EventClass.UNKNOWN -> 15
     }
 
     private fun calculateNormSoundLevel(dBSPL: Float, floor: Float): Int {

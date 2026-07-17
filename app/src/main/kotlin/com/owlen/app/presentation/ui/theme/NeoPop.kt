@@ -4,7 +4,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -20,16 +23,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke as StrokeStyle
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -42,6 +52,11 @@ import kotlin.math.roundToInt
  *
  * The back edges of the parallelograms are pinned to the outer bounds, so
  * the component's total footprint never changes during the press.
+ *
+ * Feel details: a haptic tick fires on press-down, the face darkens ~8%
+ * at full press so the plunk reads even on bright faces, and [shimmer]
+ * sweeps a slanted highlight across the face every few seconds (reserve
+ * it for primary CTAs).
  */
 @Composable
 fun NeoPopPlate(
@@ -54,6 +69,7 @@ fun NeoPopPlate(
     depth: Dp = 6.dp,
     enabled: Boolean = true,
     strokedEdges: Boolean = false,
+    shimmer: Boolean = false,
     contentAlignment: Alignment = Alignment.Center,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable BoxScope.() -> Unit
@@ -65,6 +81,30 @@ fun NeoPopPlate(
         animationSpec = tween(durationMillis = 70, easing = LinearEasing),
         label = "plunk"
     )
+
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(pressed) {
+        if (pressed && enabled) {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
+
+    // Shimmer phase: sweep takes the first ~28% of a 4s cycle, then rests
+    val shimmerPhase = if (shimmer && enabled) {
+        val transition = rememberInfiniteTransition(label = "shimmer")
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 4000, easing = LinearEasing)
+            ),
+            label = "shimmerPhase"
+        ).value
+    } else {
+        0f
+    }
+
+    val pressedFace = lerp(faceColor, Color.Black, 0.08f * press)
 
     Box(
         modifier = modifier.drawBehind {
@@ -107,8 +147,28 @@ fun NeoPopPlate(
                     val px = (depth.toPx() * press).roundToInt()
                     IntOffset(px, px)
                 }
-                .background(if (enabled) faceColor else SurfaceSunken, RectangleShape)
+                .background(if (enabled) pressedFace else SurfaceSunken, RectangleShape)
                 .border(1.dp, strokeColor, RectangleShape)
+                .drawWithContent {
+                    drawContent()
+                    if (shimmerPhase > 0f && shimmerPhase < 0.28f) {
+                        // Slanted highlight bar sweeping left → right across the face
+                        val progress = shimmerPhase / 0.28f
+                        val band = size.width * 0.28f
+                        val x = -band + (size.width + band * 2) * progress
+                        drawRect(
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = 0.10f),
+                                    Color.Transparent
+                                ),
+                                start = Offset(x, size.height),
+                                end = Offset(x + band, 0f)
+                            )
+                        )
+                    }
+                }
                 .then(
                     if (onClick != null) {
                         Modifier.clickable(
@@ -143,6 +203,28 @@ fun Modifier.neoPopCard(
     .border(1.dp, stroke, shape)
 
 /**
+ * CRED signature: small "+" ticks drawn just outside the four corners of a
+ * panel. Reserve for one or two marquee cards per screen — more is noise.
+ */
+fun Modifier.cornerTicks(
+    color: Color = TextSecondary.copy(alpha = 0.35f)
+): Modifier = this.drawBehind {
+    val arm = 4.dp.toPx()
+    val strokeW = 1.dp.toPx()
+    val gap = 6.dp.toPx()
+    val corners = listOf(
+        Offset(-gap, -gap),
+        Offset(size.width + gap, -gap),
+        Offset(-gap, size.height + gap),
+        Offset(size.width + gap, size.height + gap)
+    )
+    corners.forEach { c ->
+        drawLine(color, Offset(c.x - arm, c.y), Offset(c.x + arm, c.y), strokeW)
+        drawLine(color, Offset(c.x, c.y - arm), Offset(c.x, c.y + arm), strokeW)
+    }
+}
+
+/**
  * App-wide matte backdrop: solid near-black, optionally textured with a
  * static dot grid. Deliberately animation-free (night battery use).
  */
@@ -164,7 +246,7 @@ fun MatteBackground(
                 while (y < size.height) {
                     var x = spacing
                     while (x < size.width) {
-                        drawCircle(DotGrid, dotRadius, androidx.compose.ui.geometry.Offset(x, y))
+                        drawCircle(DotGrid, dotRadius, Offset(x, y))
                         x += spacing
                     }
                     y += spacing

@@ -20,11 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.presentation.ui.components.NeoPopButton
 import com.owlen.app.presentation.ui.components.NeoPopRowDivider
+import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
-import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
+import com.owlen.app.presentation.ui.theme.cornerTicks
 import com.owlen.app.presentation.ui.theme.neoPopCard
 
 @Composable
@@ -54,45 +55,51 @@ fun MorningSummaryScreen(
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Good Morning",
-            style = MaterialTheme.typography.headlineMedium,
-            color = TextPrimary
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = outcomeText,
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary
-        )
+        FadeSlideIn {
+            Column {
+                Text(
+                    text = "LAST NIGHT",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Good Morning",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = outcomeText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Summary card
-        Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        // Hero stat: protected time as the biggest thing on the screen
+        FadeSlideIn(delayMillis = 100) {
+            Column {
                 Text(
-                    text = "Protected",
+                    text = "PROTECTED",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextSecondary
                 )
                 Text(
                     text = "${protectedHours}h ${protectedMinutes}m",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Green,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.displayLarge,
+                    color = Green
                 )
             }
+        }
 
-            NeoPopRowDivider()
+        Spacer(modifier = Modifier.height(24.dp))
+
+        FadeSlideIn(delayMillis = 200) {
+        // Summary card
+        Column(modifier = Modifier.fillMaxWidth().cornerTicks().neoPopCard()) {
 
             if (quietNight) {
                 Box(
@@ -124,7 +131,7 @@ fun MorningSummaryScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = eventCount.toString(),
-                            fontSize = 28.sp,
+                            fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
@@ -139,7 +146,7 @@ fun MorningSummaryScreen(
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 text = maskingCount.toString(),
-                                fontSize = 28.sp,
+                                fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )
@@ -175,6 +182,7 @@ fun MorningSummaryScreen(
                 }
             }
         }
+        }
 
         if (adjustSensitivitySuggested) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -202,10 +210,12 @@ fun MorningSummaryScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        NeoPopButton(
-            text = if (!quietNight) "View Details" else "Done",
-            onClick = if (!quietNight) onViewDetails else onDismiss,
-            modifier = Modifier.fillMaxWidth()
-        )
+        FadeSlideIn(delayMillis = 300) {
+            NeoPopButton(
+                text = if (!quietNight) "View Details" else "Done",
+                onClick = if (!quietNight) onViewDetails else onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }

@@ -16,9 +16,10 @@ class AudioPlayer : Closeable {
         const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
         const val AUDIO_USAGE = AudioAttributes.USAGE_MEDIA
         const val CONTENT_TYPE = AudioAttributes.CONTENT_TYPE_MUSIC
-        const val FADE_STEPS = 100
-        const val FADE_DURATION_MS = 2000L
-        const val FADE_STEP_DELAY_MS = 20L
+        const val FADE_IN_STEPS = 150
+        const val FADE_IN_STEP_DELAY_MS = 20L
+        const val FADE_OUT_STEPS = 100
+        const val FADE_OUT_STEP_DELAY_MS = 20L
         const val MINIMUM_MASKING_DURATION_MS = 30_000L
     }
 
@@ -71,11 +72,12 @@ class AudioPlayer : Closeable {
 
             startMaskingTimeMs = System.currentTimeMillis()
 
-            // Fade in from 0 to target volume
-            for (step in 0..FADE_STEPS) {
-                val volumeAtStep = (step.toFloat() / FADE_STEPS) * cappedVolume
+            // Fade in with ease-in curve (cubic) so volume builds gradually
+            for (step in 0..FADE_IN_STEPS) {
+                val t = step.toFloat() / FADE_IN_STEPS
+                val volumeAtStep = (t * t * t) * cappedVolume
                 audioTrack?.setVolume(volumeAtStep)
-                delay(FADE_STEP_DELAY_MS)
+                delay(FADE_IN_STEP_DELAY_MS)
             }
             audioTrack?.setVolume(cappedVolume)
             currentVolume = cappedVolume
@@ -96,10 +98,10 @@ class AudioPlayer : Closeable {
                 }
 
                 // Fade out from current volume to 0
-                for (step in 0..FADE_STEPS) {
-                    val volumeAtStep = currentVolume * (1f - step.toFloat() / FADE_STEPS)
+                for (step in 0..FADE_OUT_STEPS) {
+                    val volumeAtStep = currentVolume * (1f - step.toFloat() / FADE_OUT_STEPS)
                     audioTrack?.setVolume(volumeAtStep)
-                    delay(FADE_STEP_DELAY_MS)
+                    delay(FADE_OUT_STEP_DELAY_MS)
                 }
 
                 audioTrack?.stop()

@@ -79,8 +79,12 @@ fun NeoPopRow(
     }
 }
 
-/** 1dp hard divider between rows. */
+/** 1dp hard divider between rows, inset so it doesn't touch the card stroke. */
 @Composable
 fun NeoPopRowDivider(modifier: Modifier = Modifier) {
-    HorizontalDivider(modifier = modifier, thickness = 1.dp, color = Stroke)
+    HorizontalDivider(
+        modifier = modifier.padding(start = 16.dp),
+        thickness = 1.dp,
+        color = Stroke
+    )
 }

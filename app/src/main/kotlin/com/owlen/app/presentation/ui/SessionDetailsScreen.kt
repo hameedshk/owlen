@@ -80,11 +80,18 @@ fun SessionDetailsScreen(
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Session Details",
-                style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary
-            )
+            Column {
+                Text(
+                    text = "HISTORY",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary
+                )
+                Text(
+                    text = "Session Details",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = TextPrimary
+                )
+            }
         }
 
         if (events.isEmpty()) {

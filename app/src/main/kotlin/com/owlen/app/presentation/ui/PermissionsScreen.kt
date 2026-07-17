@@ -43,6 +43,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.owlen.app.presentation.util.BatteryOptimization
 import com.owlen.app.presentation.ui.components.NeoPopButton
+import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
@@ -133,37 +134,41 @@ fun PermissionsScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            PermissionRow(
-                icon = {
-                    Icon(
-                        imageVector = Icons.Rounded.Mic,
-                        contentDescription = null,
-                        tint = TextPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                title = "Microphone",
-                description = "Listen for environmental sounds.",
-                isGranted = microphoneGranted,
-                onClick = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) }
-            )
+            FadeSlideIn {
+                PermissionRow(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Mic,
+                            contentDescription = null,
+                            tint = TextPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    title = "Microphone",
+                    description = "Listen for environmental sounds.",
+                    isGranted = microphoneGranted,
+                    onClick = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) }
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            PermissionRow(
-                icon = {
-                    Icon(
-                        imageVector = Icons.Rounded.BatteryFull,
-                        contentDescription = null,
-                        tint = TextPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                title = "Ignore Battery Optimisation",
-                description = "Keep Owlen running through the night.",
-                isGranted = batteryGranted,
-                onClick = { if (!batteryGranted) BatteryOptimization.requestExemption(context) }
-            )
+            FadeSlideIn(delayMillis = 120) {
+                PermissionRow(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Rounded.BatteryFull,
+                            contentDescription = null,
+                            tint = TextPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    title = "Ignore Battery Optimisation",
+                    description = "Keep Owlen running through the night.",
+                    isGranted = batteryGranted,
+                    onClick = { if (!batteryGranted) BatteryOptimization.requestExemption(context) }
+                )
+            }
 
             if (!batteryGranted) {
                 Spacer(modifier = Modifier.height(12.dp))

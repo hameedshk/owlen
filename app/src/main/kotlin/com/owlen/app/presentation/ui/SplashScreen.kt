@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.owlen.app.R
 import com.owlen.app.presentation.ui.theme.MatteBackground
 import com.owlen.app.presentation.ui.theme.TextPrimary
@@ -57,6 +58,12 @@ fun SplashScreen(
         animationSpec = tween(700),
         label = "contentAlpha"
     )
+    // CRED-style wordmark: letters track in from wide to tight as they fade in
+    val wordmarkTracking by animateFloatAsState(
+        targetValue = if (appeared) 2f else 8f,
+        animationSpec = tween(700),
+        label = "wordmarkTracking"
+    )
 
     MatteBackground {
         Column(
@@ -77,7 +84,9 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "OWLEN",
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    letterSpacing = wordmarkTracking.sp
+                ),
                 color = TextPrimary,
                 textAlign = TextAlign.Center
             )

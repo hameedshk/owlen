@@ -55,6 +55,7 @@ import com.owlen.app.presentation.ui.theme.SurfaceSunken
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
+import com.owlen.app.presentation.ui.theme.cornerTicks
 import com.owlen.app.presentation.ui.theme.neoPopCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -271,6 +272,7 @@ private fun ActiveModeContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .cornerTicks()
                 .neoPopCard()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween

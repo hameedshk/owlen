@@ -59,6 +59,19 @@ class DisturbanceScorerTest {
     }
 
     @Test
+    fun testAlarmClockAlwaysReturnsZeroScore() {
+        val event = DetectedEvent(
+            eventClass = EventClass.ALARM_CLOCK,
+            confidence = 0.9f,
+            isSafetyEvent = false,
+            timestampMs = System.currentTimeMillis()
+        )
+        val result = scorer.score(event, 80f, 23, defaultSettings)
+        assertEquals(0, result.score)
+        assertFalse(result.isSafetyBypass)
+    }
+
+    @Test
     fun testRainWithRainBehaviourEnabledReturnsZeroScore() {
         val event = DetectedEvent(
             eventClass = EventClass.RAIN,
@@ -139,13 +152,27 @@ class DisturbanceScorerTest {
     @Test
     fun testAllEventWeightsAppliedCorrectly() {
         val testCases = mapOf(
+            EventClass.AIRCRAFT to 55,
+            EventClass.BIRD to 30,
+            EventClass.CAR_ALARM to 80,
+            EventClass.CAR_HORN to 80,
+            EventClass.CAT to 45,
+            EventClass.CONSTRUCTION to 85,
+            EventClass.DOG_BARKING to 60,
+            EventClass.DOOR_KNOCK to 70,
+            EventClass.FIREWORKS to 90,
             EventClass.GARBAGE_COLLECTION to 80,
+            EventClass.GLASS_BREAK to 85,
             EventClass.HUMAN_SHOUTING to 90,
             EventClass.MOTORCYCLE to 75,
-            EventClass.DOG_BARKING to 60,
-            EventClass.CONSTRUCTION to 85,
+            EventClass.MUSIC to 55,
             EventClass.RAIN to 20,
+            EventClass.SIREN to 85,
+            EventClass.SNORING to 25,
+            EventClass.SPEECH to 65,
             EventClass.THUNDER to 50,
+            EventClass.TRAFFIC to 40,
+            EventClass.WIND to 15,
             EventClass.CUSTOM to 75,
             EventClass.UNKNOWN to 40
         )

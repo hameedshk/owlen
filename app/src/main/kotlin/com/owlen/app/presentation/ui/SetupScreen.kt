@@ -1,6 +1,8 @@
 package com.owlen.app.presentation.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +39,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,8 +51,12 @@ import com.owlen.app.presentation.ui.components.NeoPopRadio
 import com.owlen.app.presentation.ui.components.NeoPopRow
 import com.owlen.app.presentation.ui.components.NeoPopRowDivider
 import com.owlen.app.presentation.ui.components.NeoPopSegmented
+import com.owlen.app.presentation.ui.components.SectionHeader
+import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
+import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
+import com.owlen.app.presentation.ui.theme.SurfaceSunken
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.neoPopCard
@@ -106,105 +114,101 @@ fun SetupScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Sleep Time",
-                style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TimePickerCard(
-                hour = sleepHour % 12,
-                minute = 0,
-                isAm = sleepHour < 12,
-                onHourChange = { h ->
-                    val pm = sleepHour >= 12
-                    sleepHour = if (pm) (h % 12) + 12 else h % 12
-                },
-                onMinuteChange = {},
-                onAmPmChange = { isAm ->
-                    sleepHour = if (!isAm) (sleepHour % 12) + 12 else sleepHour % 12
-                }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Wake Time",
-                style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TimePickerCard(
-                hour = wakeHour % 12,
-                minute = wakeMinute,
-                isAm = wakeHour < 12,
-                onHourChange = { h ->
-                    val pm = wakeHour >= 12
-                    wakeHour = if (!pm) h % 12 else (h % 12) + 12
-                },
-                onMinuteChange = { wakeMinute = it },
-                onAmPmChange = { isAm ->
-                    wakeHour = if (!isAm) (wakeHour % 12) + 12 else wakeHour % 12
-                }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Protection Sound",
-                style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "This will be played when needed.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
-                MaskingSound.entries.forEachIndexed { index, sound ->
-                    NeoPopRow(
-                        title = sound.displayName,
-                        selected = selectedSound == sound,
-                        onClick = { selectedSound = sound },
-                        leading = { NeoPopRadio(selected = selectedSound == sound) }
+            FadeSlideIn {
+                Column {
+                    SectionHeader(text = "Sleep Time")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TimePickerCard(
+                        hour = sleepHour % 12,
+                        minute = 0,
+                        isAm = sleepHour < 12,
+                        onHourChange = { h ->
+                            val pm = sleepHour >= 12
+                            sleepHour = if (pm) (h % 12) + 12 else h % 12
+                        },
+                        onMinuteChange = {},
+                        onAmPmChange = { isAm ->
+                            sleepHour = if (!isAm) (sleepHour % 12) + 12 else sleepHour % 12
+                        }
                     )
-                    if (index < MaskingSound.entries.size - 1) NeoPopRowDivider()
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = "Sensitivity",
-                style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Controls how easily Owlen responds.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
-                Sensitivity.entries.forEachIndexed { index, sensitivity ->
-                    NeoPopRow(
-                        title = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
-                        selected = selectedSensitivity == sensitivity,
-                        onClick = { selectedSensitivity = sensitivity },
-                        leading = { NeoPopRadio(selected = selectedSensitivity == sensitivity) }
+            FadeSlideIn(delayMillis = 100) {
+                Column {
+                    SectionHeader(text = "Wake Time")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TimePickerCard(
+                        hour = wakeHour % 12,
+                        minute = wakeMinute,
+                        isAm = wakeHour < 12,
+                        onHourChange = { h ->
+                            val pm = wakeHour >= 12
+                            wakeHour = if (!pm) h % 12 else (h % 12) + 12
+                        },
+                        onMinuteChange = { wakeMinute = it },
+                        onAmPmChange = { isAm ->
+                            wakeHour = if (!isAm) (wakeHour % 12) + 12 else wakeHour % 12
+                        }
                     )
-                    if (index < Sensitivity.entries.size - 1) NeoPopRowDivider()
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            FadeSlideIn(delayMillis = 200) {
+                Column {
+                    SectionHeader(text = "Protection Sound")
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "This will be played when needed.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
+                        MaskingSound.entries.forEachIndexed { index, sound ->
+                            NeoPopRow(
+                                title = sound.displayName,
+                                selected = selectedSound == sound,
+                                onClick = { selectedSound = sound },
+                                leading = { NeoPopRadio(selected = selectedSound == sound) }
+                            )
+                            if (index < MaskingSound.entries.size - 1) NeoPopRowDivider()
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            FadeSlideIn(delayMillis = 300) {
+                Column {
+                    SectionHeader(text = "Sensitivity")
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Controls how easily Owlen responds.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
+                        Sensitivity.entries.forEachIndexed { index, sensitivity ->
+                            NeoPopRow(
+                                title = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
+                                selected = selectedSensitivity == sensitivity,
+                                onClick = { selectedSensitivity = sensitivity },
+                                leading = { NeoPopRadio(selected = selectedSensitivity == sensitivity) }
+                            )
+                            if (index < Sensitivity.entries.size - 1) NeoPopRowDivider()
+                        }
+                    }
                 }
             }
 
@@ -248,26 +252,35 @@ private fun TimePickerCard(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            NumberDrumPicker(
-                value = if (hour == 0) 12 else hour,
-                range = 1..12,
-                onValueChange = onHourChange
-            )
+            // Sunken well inside the raised card — classic CRED depth stack
+            Row(
+                modifier = Modifier
+                    .background(SurfaceSunken, RectangleShape)
+                    .border(1.dp, Stroke, RectangleShape)
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                NumberDrumPicker(
+                    value = if (hour == 0) 12 else hour,
+                    range = 1..12,
+                    onValueChange = onHourChange
+                )
 
-            Text(
-                text = ":",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
+                Text(
+                    text = ":",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
 
-            NumberDrumPicker(
-                value = minute,
-                range = 0..59,
-                onValueChange = onMinuteChange,
-                formatWithLeadingZero = true
-            )
+                NumberDrumPicker(
+                    value = minute,
+                    range = 0..59,
+                    onValueChange = onMinuteChange,
+                    formatWithLeadingZero = true
+                )
+            }
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -292,6 +305,7 @@ private fun NumberDrumPicker(
     val initialIndex = items.indexOf(value).coerceAtLeast(0)
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+    val selectedIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }
@@ -324,7 +338,8 @@ private fun NumberDrumPicker(
                     text = displayText,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = if (index == selectedIndex) Primary
+                    else TextSecondary.copy(alpha = 0.5f),
                     textAlign = TextAlign.Center
                 )
             }

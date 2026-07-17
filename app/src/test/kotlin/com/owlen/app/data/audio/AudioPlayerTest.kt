@@ -69,13 +69,13 @@ class AudioPlayerTest {
     }
 
     @Test
-    fun fadeDuration_isCorrect() {
-        assertEquals(2000L, AudioPlayer.FADE_DURATION_MS)
+    fun fadeInSteps_isCorrect() {
+        assertEquals(150, AudioPlayer.FADE_IN_STEPS)
     }
 
     @Test
-    fun fadeSteps_isCorrect() {
-        assertEquals(100, AudioPlayer.FADE_STEPS)
+    fun fadeOutSteps_isCorrect() {
+        assertEquals(100, AudioPlayer.FADE_OUT_STEPS)
     }
 
     private fun assertEquals(expected: Any, actual: Any) {

@@ -67,7 +67,8 @@ fun NeoPopButton(
         strokeColor = if (enabled) style.stroke else Stroke,
         depth = 6.dp,
         enabled = enabled,
-        strokedEdges = style.strokedEdges
+        strokedEdges = style.strokedEdges,
+        shimmer = variant == NeoPopButtonVariant.Primary
     ) {
         Text(
             text = text.uppercase(),

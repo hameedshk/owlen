@@ -1,5 +1,6 @@
 package com.owlen.app.presentation.ui
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -33,12 +34,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke as StrokeStyle
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +66,7 @@ import com.owlen.app.presentation.ui.theme.SurfaceCard
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
+import com.owlen.app.presentation.ui.theme.cornerTicks
 import com.owlen.app.presentation.ui.theme.neoPopCard
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -146,15 +153,15 @@ fun HomeScreen(
             FadeSlideIn {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = greeting,
+                        text = greeting.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Let's keep tonight quiet.",
                         style = MaterialTheme.typography.headlineMedium,
                         color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Let's keep tonight quiet",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
                     )
                 }
             }
@@ -203,18 +210,41 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Hero: 160dp square NeoPop plate with 10dp depth
+            // Hero: 160dp square NeoPop plate with 10dp depth.
+            // Activation flash: a green frame blooms outward once when
+            // protection starts, so flipping it on feels like an event.
+            val activationFlash = remember { Animatable(0f) }
+            LaunchedEffect(isProtectionActive) {
+                if (isProtectionActive) {
+                    activationFlash.snapTo(1f)
+                    activationFlash.animateTo(0f, tween(600, easing = FastOutSlowInEasing))
+                }
+            }
+
             NeoPopPlate(
                 onClick = { onProtectionToggle(!isProtectionActive) },
                 modifier = Modifier
                     .padding(vertical = 36.dp)
                     .size(160.dp)
-                    .then(if (isProtectionActive) Modifier.scale(pulseScale) else Modifier),
+                    .then(if (isProtectionActive) Modifier.scale(pulseScale) else Modifier)
+                    .drawBehind {
+                        val flash = activationFlash.value
+                        if (flash > 0f) {
+                            val inflate = 10.dp.toPx() * (1f - flash)
+                            drawRect(
+                                color = Green.copy(alpha = flash * 0.8f),
+                                topLeft = Offset(-inflate, -inflate),
+                                size = Size(size.width + inflate * 2, size.height + inflate * 2),
+                                style = StrokeStyle(width = 2.dp.toPx())
+                            )
+                        }
+                    },
                 faceColor = if (isProtectionActive) Green else SurfaceCard,
                 edgeRight = if (isProtectionActive) GreenEdge else NeutralEdge,
                 edgeBottom = if (isProtectionActive) GreenEdgeDeep else NeutralEdge,
                 strokeColor = if (isProtectionActive) Green else StrokeBright,
-                depth = 10.dp
+                depth = 10.dp,
+                shimmer = !isProtectionActive
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
@@ -247,6 +277,7 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .cornerTicks()
                         .neoPopCard()
                         .padding(vertical = 20.dp, horizontal = 24.dp)
                 ) {
@@ -284,13 +315,15 @@ fun HomeScreen(
                 ) {
                     QuickInfoChip(
                         icon = Icons.Rounded.GraphicEq,
-                        text = preferredSound.displayName,
+                        label = "Sound",
+                        value = preferredSound.displayName,
                         modifier = Modifier.weight(1f),
                         onClick = onNavigateToSettings
                     )
                     QuickInfoChip(
                         icon = Icons.Rounded.Tune,
-                        text = sensitivity.name.lowercase()
+                        label = "Sensitivity",
+                        value = sensitivity.name.lowercase()
                             .replaceFirstChar { it.uppercase() },
                         modifier = Modifier.weight(1f),
                         onClick = onNavigateToSettings
@@ -330,10 +363,12 @@ private fun ScheduleTimeItem(
     }
 }
 
+/** CRED-style stat chip: tiny uppercase overline label above the value. */
 @Composable
 private fun QuickInfoChip(
     icon: ImageVector,
-    text: String,
+    label: String,
+    value: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -341,7 +376,7 @@ private fun QuickInfoChip(
         modifier = modifier
             .neoPopCard()
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 14.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -350,12 +385,20 @@ private fun QuickInfoChip(
             tint = Primary,
             modifier = Modifier.size(16.dp)
         )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = TextPrimary,
-            maxLines = 1
-        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Column {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = TextSecondary
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextPrimary,
+                maxLines = 1
+            )
+        }
     }
 }

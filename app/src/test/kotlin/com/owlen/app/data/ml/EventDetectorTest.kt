@@ -77,6 +77,25 @@ class EventDetectorTest {
     }
 
     @Test
+    fun sirenDetectsSiren() = runBlocking {
+        val event = detector.detect(scoresWith(314 to 0.4f))
+        assertEquals(EventClass.SIREN, event.eventClass)
+        assertFalse(event.isSafetyEvent)
+    }
+
+    @Test
+    fun speechDetectsSpeech() = runBlocking {
+        val event = detector.detect(scoresWith(0 to 0.3f))
+        assertEquals(EventClass.SPEECH, event.eventClass)
+    }
+
+    @Test
+    fun musicDetectsMusic() = runBlocking {
+        val event = detector.detect(scoresWith(132 to 0.35f))
+        assertEquals(EventClass.MUSIC, event.eventClass)
+    }
+
+    @Test
     fun highestScoringClassWins() = runBlocking {
         val event = detector.detect(
             scoresWith(70 to 0.3f, 393 to 0.5f, 283 to 0.2f)
@@ -117,13 +136,29 @@ class EventDetectorTest {
     @Test
     fun allOtherClassesAreNotSafetyEvents() {
         val nonSafetyClasses = listOf(
+            EventClass.AIRCRAFT,
+            EventClass.ALARM_CLOCK,
+            EventClass.BIRD,
+            EventClass.CAR_ALARM,
+            EventClass.CAR_HORN,
+            EventClass.CAT,
+            EventClass.CONSTRUCTION,
+            EventClass.DOG_BARKING,
+            EventClass.DOOR_KNOCK,
+            EventClass.FIREWORKS,
             EventClass.GARBAGE_COLLECTION,
+            EventClass.GLASS_BREAK,
             EventClass.HUMAN_SHOUTING,
             EventClass.MOTORCYCLE,
-            EventClass.DOG_BARKING,
-            EventClass.CONSTRUCTION,
+            EventClass.MUSIC,
             EventClass.RAIN,
+            EventClass.SIREN,
+            EventClass.SNORING,
+            EventClass.SPEECH,
             EventClass.THUNDER,
+            EventClass.TRAFFIC,
+            EventClass.WIND,
+            EventClass.CUSTOM,
             EventClass.UNKNOWN
         )
 

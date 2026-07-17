@@ -142,7 +142,7 @@ fun EventDetectedOverlay(
                     )
                     Text(
                         text = disturbanceScore.toString(),
-                        fontSize = 40.sp,
+                        fontSize = 48.sp,
                         fontWeight = FontWeight.Bold,
                         color = Primary
                     )
