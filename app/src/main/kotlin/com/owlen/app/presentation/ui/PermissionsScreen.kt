@@ -42,7 +42,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.owlen.app.presentation.util.BatteryOptimization
-import com.owlen.app.presentation.ui.components.NeoPopButton
+import com.owlen.app.presentation.ui.components.OwlenButton
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
@@ -185,7 +185,7 @@ fun PermissionsScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 32.dp)
         ) {
-            NeoPopButton(
+            OwlenButton(
                 text = "Continue",
                 onClick = onNavigateToSetup,
                 enabled = microphoneGranted,

@@ -50,7 +50,7 @@ internal fun OptionPickerDialog(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    NeoPopDialog(
+    OwlenDialog(
         title = title,
         onDismiss = onDismiss,
         dismissText = "Close"
@@ -64,7 +64,7 @@ internal fun OptionPickerDialog(
                     .padding(vertical = 12.dp, horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                NeoPopRadio(selected = selected)
+                OwlenRadio(selected = selected)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = option,
@@ -88,7 +88,7 @@ internal fun SliderDialog(
 ) {
     var sliderValue by remember { mutableFloatStateOf(initialValue) }
 
-    NeoPopDialog(
+    OwlenDialog(
         title = title,
         onDismiss = onDismiss,
         confirmText = "Save",
@@ -106,7 +106,7 @@ internal fun SliderDialog(
             onValueChange = { sliderValue = it },
             valueRange = valueRange,
             steps = steps,
-            colors = neoPopSliderColors()
+            colors = owlenSliderColors()
         )
     }
 }
@@ -162,7 +162,7 @@ internal fun TimePickerCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            NeoPopSegmented(
+            OwlenSegmented(
                 options = listOf("AM", "PM"),
                 selectedIndex = if (isAm) 0 else 1,
                 onSelect = { index -> onAmPmChange(index == 0) }
@@ -180,7 +180,7 @@ internal fun RangePickerDialog(
     onValueChange: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    NeoPopDialog(
+    OwlenDialog(
         title = title,
         onDismiss = onDismiss,
         content = {

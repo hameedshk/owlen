@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.owlen.app.presentation.enrollment.EnrollmentViewModel.Phase
-import com.owlen.app.presentation.ui.components.NeoPopButton
-import com.owlen.app.presentation.ui.components.NeoPopButtonVariant
+import com.owlen.app.presentation.ui.components.OwlenButton
+import com.owlen.app.presentation.ui.components.OwlenButtonVariant
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
@@ -80,10 +80,10 @@ fun EnrollmentScreen(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                NeoPopButton(
+                OwlenButton(
                     text = "Back",
                     onClick = onDone,
-                    variant = NeoPopButtonVariant.Secondary,
+                    variant = OwlenButtonVariant.Secondary,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -105,16 +105,16 @@ fun EnrollmentScreen(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                NeoPopButton(
+                OwlenButton(
                     text = "Done",
                     onClick = onDone,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                NeoPopButton(
+                OwlenButton(
                     text = "Enroll another sound",
                     onClick = onRestart,
-                    variant = NeoPopButtonVariant.Secondary,
+                    variant = OwlenButtonVariant.Secondary,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -127,7 +127,7 @@ fun EnrollmentScreen(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                NeoPopButton(
+                OwlenButton(
                     text = "Try Again",
                     onClick = onRestart,
                     modifier = Modifier.fillMaxWidth()
@@ -213,7 +213,7 @@ fun EnrollmentScreen(
                     }
 
                     else -> {
-                        NeoPopButton(
+                        OwlenButton(
                             text = if (takesCompleted == 0) "Record" else "Record next take",
                             onClick = onRecordTake,
                             modifier = Modifier.fillMaxWidth()
@@ -230,10 +230,10 @@ fun EnrollmentScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                NeoPopButton(
+                OwlenButton(
                     text = "Cancel",
                     onClick = onDone,
-                    variant = NeoPopButtonVariant.Secondary,
+                    variant = OwlenButtonVariant.Secondary,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

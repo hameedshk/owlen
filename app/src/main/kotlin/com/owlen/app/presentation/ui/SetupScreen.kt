@@ -46,11 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
-import com.owlen.app.presentation.ui.components.NeoPopButton
-import com.owlen.app.presentation.ui.components.NeoPopRadio
-import com.owlen.app.presentation.ui.components.NeoPopRow
-import com.owlen.app.presentation.ui.components.NeoPopRowDivider
-import com.owlen.app.presentation.ui.components.NeoPopSegmented
+import com.owlen.app.presentation.ui.components.OwlenButton
+import com.owlen.app.presentation.ui.components.OwlenRadio
+import com.owlen.app.presentation.ui.components.OwlenRow
+import com.owlen.app.presentation.ui.components.OwlenRowDivider
+import com.owlen.app.presentation.ui.components.OwlenSegmented
 import com.owlen.app.presentation.ui.components.NumberDrumPicker
 import com.owlen.app.presentation.ui.components.SectionHeader
 import com.owlen.app.presentation.ui.components.TimePickerCard
@@ -174,13 +174,13 @@ fun SetupScreen(
 
                     Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
                         MaskingSound.entries.forEachIndexed { index, sound ->
-                            NeoPopRow(
+                            OwlenRow(
                                 title = sound.displayName,
                                 selected = selectedSound == sound,
                                 onClick = { selectedSound = sound },
-                                leading = { NeoPopRadio(selected = selectedSound == sound) }
+                                leading = { OwlenRadio(selected = selectedSound == sound) }
                             )
-                            if (index < MaskingSound.entries.size - 1) NeoPopRowDivider()
+                            if (index < MaskingSound.entries.size - 1) OwlenRowDivider()
                         }
                     }
                 }
@@ -202,13 +202,13 @@ fun SetupScreen(
 
                     Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
                         Sensitivity.entries.forEachIndexed { index, sensitivity ->
-                            NeoPopRow(
+                            OwlenRow(
                                 title = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
                                 selected = selectedSensitivity == sensitivity,
                                 onClick = { selectedSensitivity = sensitivity },
-                                leading = { NeoPopRadio(selected = selectedSensitivity == sensitivity) }
+                                leading = { OwlenRadio(selected = selectedSensitivity == sensitivity) }
                             )
-                            if (index < Sensitivity.entries.size - 1) NeoPopRowDivider()
+                            if (index < Sensitivity.entries.size - 1) OwlenRowDivider()
                         }
                     }
                 }
@@ -222,7 +222,7 @@ fun SetupScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 32.dp)
         ) {
-            NeoPopButton(
+            OwlenButton(
                 text = "Continue",
                 onClick = {
                     onSaveSettings(sleepHour, wakeHour, wakeMinute, selectedSound, selectedSensitivity)

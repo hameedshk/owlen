@@ -34,7 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.owlen.app.R
-import com.owlen.app.presentation.ui.components.NeoPopButton
+import com.owlen.app.presentation.ui.components.OwlenButton
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.TextDisabled
 import com.owlen.app.presentation.ui.theme.TextPrimary
@@ -113,7 +113,7 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            NeoPopButton(
+            OwlenButton(
                 text = if (pagerState.currentPage < onboardingPages.size - 1) "Next" else "Get Started",
                 onClick = {
                     if (pagerState.currentPage < onboardingPages.size - 1) {

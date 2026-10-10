@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.owlen.app.presentation.ui.components.NeoPopButton
-import com.owlen.app.presentation.ui.components.NeoPopRowDivider
+import com.owlen.app.presentation.ui.components.OwlenButton
+import com.owlen.app.presentation.ui.components.OwlenRowDivider
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.TextPrimary
@@ -159,7 +159,7 @@ fun MorningSummaryScreen(
                     }
                 }
 
-                NeoPopRowDivider()
+                OwlenRowDivider()
 
                 Row(
                     modifier = Modifier
@@ -211,7 +211,7 @@ fun MorningSummaryScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         FadeSlideIn(delayMillis = 300) {
-            NeoPopButton(
+            OwlenButton(
                 text = if (!quietNight) "View Details" else "Done",
                 onClick = if (!quietNight) onViewDetails else onDismiss,
                 modifier = Modifier.fillMaxWidth()

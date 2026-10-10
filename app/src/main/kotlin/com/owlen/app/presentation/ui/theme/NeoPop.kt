@@ -203,6 +203,16 @@ fun Modifier.neoPopCard(
     .border(1.dp, stroke, shape)
 
 /**
+ * Owlen panel: soft fill with rounded corners and no border.
+ * Depth comes from fill contrast, not stroke.
+ */
+fun Modifier.owlenCard(
+    fill: Color = SurfaceCard,
+    shape: Shape = RoundedCornerShape(16.dp)
+): Modifier = this
+    .background(fill, shape)
+
+/**
  * CRED signature: small "+" ticks drawn just outside the four corners of a
  * panel. Reserve for one or two marquee cards per screen — more is noise.
  */

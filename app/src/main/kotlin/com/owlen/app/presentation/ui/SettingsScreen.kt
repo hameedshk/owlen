@@ -38,15 +38,15 @@ import androidx.compose.ui.unit.dp
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
 import com.owlen.app.domain.model.SoundPrototype
-import com.owlen.app.presentation.ui.components.NeoPopButtonVariant
-import com.owlen.app.presentation.ui.components.NeoPopDialog
-import com.owlen.app.presentation.ui.components.NeoPopRadio
-import com.owlen.app.presentation.ui.components.NeoPopRow
-import com.owlen.app.presentation.ui.components.NeoPopRowDivider
+import com.owlen.app.presentation.ui.components.OwlenButtonVariant
+import com.owlen.app.presentation.ui.components.OwlenDialog
+import com.owlen.app.presentation.ui.components.OwlenRadio
+import com.owlen.app.presentation.ui.components.OwlenRow
+import com.owlen.app.presentation.ui.components.OwlenRowDivider
 import com.owlen.app.presentation.ui.components.OptionPickerDialog
 import com.owlen.app.presentation.ui.components.SectionHeader
 import com.owlen.app.presentation.ui.components.SliderDialog
-import com.owlen.app.presentation.ui.components.neoPopSliderColors
+import com.owlen.app.presentation.ui.components.owlenSliderColors
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
@@ -136,49 +136,49 @@ fun SettingsScreen(
                 value = "$sleepFormatted – $wakeFormatted",
                 onClick = onNavigateToSleepSchedule
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "Sleep Timer",
                 value = "Set alarm",
                 onClick = onNavigateToSleepTimer
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "Protection Sound",
                 value = preferredSound.displayName,
                 onClick = { openDialog = SettingsDialog.SOUND }
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "Maximum Volume",
                 value = "$maxVolumePct%",
                 onClick = { openDialog = SettingsDialog.VOLUME }
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "Sensitivity",
                 value = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
                 onClick = { openDialog = SettingsDialog.SENSITIVITY }
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "Auto Stop",
                 value = "$autoStopSeconds sec",
                 onClick = { openDialog = SettingsDialog.AUTO_STOP }
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "Sound Level Floor",
                 value = "$soundLevelFloorDb dB",
                 onClick = { openDialog = SettingsDialog.SOUND_FLOOR }
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             // Rain behaviour — inline toggle
             Row(
@@ -211,14 +211,14 @@ fun SettingsScreen(
                     )
                 )
             }
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "Battery Optimisation",
                 value = if (batteryOptimisationAllowed) "Allowed" else "Restricted",
                 onClick = onBatteryOptimisationClick
             )
-            NeoPopRowDivider()
+            OwlenRowDivider()
 
             SettingsRow(
                 label = "About Owlen",
@@ -277,7 +277,7 @@ fun SettingsScreen(
                         )
                     }
                 }
-                NeoPopRowDivider()
+                OwlenRowDivider()
             }
 
             Row(
@@ -309,7 +309,7 @@ fun SettingsScreen(
     }
 
     prototypePendingDelete?.let { prototype ->
-        NeoPopDialog(
+        OwlenDialog(
             title = "Delete \"${prototype.name}\"?",
             onDismiss = { prototypePendingDelete = null },
             confirmText = "Delete",
@@ -318,7 +318,7 @@ fun SettingsScreen(
                 prototypePendingDelete = null
             },
             dismissText = "Cancel",
-            confirmVariant = NeoPopButtonVariant.Danger
+            confirmVariant = OwlenButtonVariant.Danger
         ) {
             Text(
                 text = "Owlen will stop reacting to this sound.",
@@ -402,7 +402,7 @@ private fun SettingsRow(
     value: String,
     onClick: () -> Unit
 ) {
-    NeoPopRow(
+    OwlenRow(
         title = label,
         onClick = onClick,
         trailing = {

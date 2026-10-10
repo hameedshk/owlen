@@ -37,8 +37,8 @@ import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
-import com.owlen.app.presentation.ui.components.NeoPopButton
-import com.owlen.app.presentation.ui.components.NeoPopButtonVariant
+import com.owlen.app.presentation.ui.components.OwlenButton
+import com.owlen.app.presentation.ui.components.OwlenButtonVariant
 import kotlinx.coroutines.delay
 
 private const val CALIBRATION_SECONDS = 60
@@ -179,10 +179,10 @@ fun CalibrationScreen(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
-            NeoPopButton(
+            OwlenButton(
                 text = "Retry",
                 onClick = onRetry,
-                variant = NeoPopButtonVariant.Secondary
+                variant = OwlenButtonVariant.Secondary
             )
         } else {
             Text(
@@ -195,10 +195,10 @@ fun CalibrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        NeoPopButton(
+        OwlenButton(
             text = "Skip — use default level",
             onClick = onSkip,
-            variant = NeoPopButtonVariant.Secondary
+            variant = OwlenButtonVariant.Secondary
         )
     }
 }
