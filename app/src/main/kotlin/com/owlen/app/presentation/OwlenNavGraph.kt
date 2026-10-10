@@ -68,6 +68,7 @@ import com.owlen.app.presentation.ui.SafetyAlertScreen
 import com.owlen.app.presentation.ui.SessionDetailsScreen
 import com.owlen.app.presentation.ui.SettingsScreen
 import com.owlen.app.presentation.ui.SetupScreen
+import com.owlen.app.presentation.ui.SleepTimerScreen
 import com.owlen.app.presentation.ui.SplashScreen
 import com.owlen.app.presentation.ui.theme.Background
 import com.owlen.app.presentation.ui.theme.MatteBackground
@@ -85,6 +86,7 @@ private object Routes {
     const val SETUP = "setup"
     const val CALIBRATION = "calibration"
     const val HOME = "home"
+    const val SLEEP_TIMER = "sleep_timer"
     const val ACTIVE_MODE = "active_mode"
     const val EVENT_OVERLAY = "event_overlay"
     const val SAFETY_ALERT = "safety_alert"
@@ -363,6 +365,10 @@ fun OwlenNavGraph(
                 )
             }
 
+            composable(Routes.SLEEP_TIMER) {
+                SleepTimerScreen()
+            }
+
             composable(Routes.ACTIVE_MODE) {
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val sessionStartTime by homeViewModel.sessionStartTime.collectAsState()
@@ -501,6 +507,7 @@ fun OwlenNavGraph(
                     onNavigateToEnrollment = { navController.navigate(Routes.ENROLLMENT) },
                     onDeletePrototype = { settingsViewModel.deletePrototype(it) },
                     onNavigateToSleepSchedule = { navController.navigate(Routes.SETUP) },
+                    onNavigateToSleepTimer = { navController.navigate(Routes.SLEEP_TIMER) },
                     onSoundSelected = { settingsViewModel.updatePreferredSound(it) },
                     onMaxVolumeChanged = { settingsViewModel.updateMaxVolume(it / 100f) },
                     onSensitivitySelected = { settingsViewModel.updateSensitivity(it) },

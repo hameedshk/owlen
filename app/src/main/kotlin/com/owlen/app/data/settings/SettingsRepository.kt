@@ -13,6 +13,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
 import com.owlen.app.domain.model.SleepSettings
+import com.owlen.app.domain.model.SleepTimerSchedule
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -38,6 +39,12 @@ class SettingsRepository @Inject constructor(
         private val RAIN_BEHAVIOUR = booleanPreferencesKey("rain_behaviour_enabled")
         private val SOUND_LEVEL_FLOOR = floatPreferencesKey("sound_level_floor")
         private val LAST_CALIBRATION_DAY = longPreferencesKey("last_calibration_epoch_day")
+        private val SCHEDULE_ENABLED = booleanPreferencesKey("schedule_enabled")
+        private val SCHEDULE_START_HOUR = intPreferencesKey("schedule_start_hour")
+        private val SCHEDULE_START_MINUTE = intPreferencesKey("schedule_start_minute")
+        private val SCHEDULE_END_HOUR = intPreferencesKey("schedule_end_hour")
+        private val SCHEDULE_END_MINUTE = intPreferencesKey("schedule_end_minute")
+        private val SCHEDULE_SOUND = stringPreferencesKey("schedule_sound")
     }
 
     /** Epoch day (days since 1970-01-01) of the most recent calibration; -1 if never run. */
@@ -154,5 +161,51 @@ class SettingsRepository @Inject constructor(
             rainBehaviourEnabled = pref[RAIN_BEHAVIOUR] ?: SleepSettings.default().rainBehaviourEnabled,
             soundLevelFloor = pref[SOUND_LEVEL_FLOOR] ?: SleepSettings.default().soundLevelFloor
         )
+    }
+
+    val schedule: Flow<SleepTimerSchedule> = context.dataStore.data.map { pref ->
+        SleepTimerSchedule(
+            enabled = pref[SCHEDULE_ENABLED] ?: false,
+            startHour = pref[SCHEDULE_START_HOUR] ?: 6,
+            startMinute = pref[SCHEDULE_START_MINUTE] ?: 0,
+            endHour = pref[SCHEDULE_END_HOUR] ?: 8,
+            endMinute = pref[SCHEDULE_END_MINUTE] ?: 0,
+            sound = pref[SCHEDULE_SOUND]?.let {
+                try {
+                    MaskingSound.valueOf(it)
+                } catch (e: IllegalArgumentException) {
+                    MaskingSound.RAIN
+                }
+            } ?: MaskingSound.RAIN
+        )
+    }
+
+    suspend fun getSchedule(): SleepTimerSchedule {
+        val pref = context.dataStore.data.first()
+        return SleepTimerSchedule(
+            enabled = pref[SCHEDULE_ENABLED] ?: false,
+            startHour = pref[SCHEDULE_START_HOUR] ?: 6,
+            startMinute = pref[SCHEDULE_START_MINUTE] ?: 0,
+            endHour = pref[SCHEDULE_END_HOUR] ?: 8,
+            endMinute = pref[SCHEDULE_END_MINUTE] ?: 0,
+            sound = pref[SCHEDULE_SOUND]?.let {
+                try {
+                    MaskingSound.valueOf(it)
+                } catch (e: IllegalArgumentException) {
+                    MaskingSound.RAIN
+                }
+            } ?: MaskingSound.RAIN
+        )
+    }
+
+    suspend fun updateSchedule(schedule: SleepTimerSchedule) {
+        context.dataStore.edit { preferences ->
+            preferences[SCHEDULE_ENABLED] = schedule.enabled
+            preferences[SCHEDULE_START_HOUR] = schedule.startHour
+            preferences[SCHEDULE_START_MINUTE] = schedule.startMinute
+            preferences[SCHEDULE_END_HOUR] = schedule.endHour
+            preferences[SCHEDULE_END_MINUTE] = schedule.endMinute
+            preferences[SCHEDULE_SOUND] = schedule.sound.name
+        }
     }
 }

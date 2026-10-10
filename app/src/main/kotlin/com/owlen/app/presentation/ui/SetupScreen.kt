@@ -51,7 +51,9 @@ import com.owlen.app.presentation.ui.components.NeoPopRadio
 import com.owlen.app.presentation.ui.components.NeoPopRow
 import com.owlen.app.presentation.ui.components.NeoPopRowDivider
 import com.owlen.app.presentation.ui.components.NeoPopSegmented
+import com.owlen.app.presentation.ui.components.NumberDrumPicker
 import com.owlen.app.presentation.ui.components.SectionHeader
+import com.owlen.app.presentation.ui.components.TimePickerCard
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
@@ -232,117 +234,3 @@ fun SetupScreen(
     }
 }
 
-@Composable
-private fun TimePickerCard(
-    hour: Int,
-    minute: Int,
-    isAm: Boolean,
-    onHourChange: (Int) -> Unit,
-    onMinuteChange: (Int) -> Unit,
-    onAmPmChange: (Boolean) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .neoPopCard()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Sunken well inside the raised card — classic CRED depth stack
-            Row(
-                modifier = Modifier
-                    .background(SurfaceSunken, RectangleShape)
-                    .border(1.dp, Stroke, RectangleShape)
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                NumberDrumPicker(
-                    value = if (hour == 0) 12 else hour,
-                    range = 1..12,
-                    onValueChange = onHourChange
-                )
-
-                Text(
-                    text = ":",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextSecondary,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                NumberDrumPicker(
-                    value = minute,
-                    range = 0..59,
-                    onValueChange = onMinuteChange,
-                    formatWithLeadingZero = true
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            NeoPopSegmented(
-                options = listOf("AM", "PM"),
-                selectedIndex = if (isAm) 0 else 1,
-                onSelect = { index -> onAmPmChange(index == 0) }
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun NumberDrumPicker(
-    value: Int,
-    range: IntRange,
-    onValueChange: (Int) -> Unit,
-    formatWithLeadingZero: Boolean = false
-) {
-    val items = range.toList()
-    val initialIndex = items.indexOf(value).coerceAtLeast(0)
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
-    val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
-    val selectedIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
-
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemIndex }
-            .distinctUntilChanged()
-            .collect { index ->
-                onValueChange(items[index.coerceIn(0, items.size - 1)])
-            }
-    }
-
-    LazyColumn(
-        state = listState,
-        flingBehavior = flingBehavior,
-        modifier = Modifier
-            .height(120.dp)
-            .width(56.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        items(items.size) { index ->
-            val item = items[index]
-            val displayText = if (formatWithLeadingZero) {
-                item.toString().padStart(2, '0')
-            } else {
-                item.toString()
-            }
-            Box(
-                modifier = Modifier.size(56.dp, 40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = displayText,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (index == selectedIndex) Primary
-                    else TextSecondary.copy(alpha = 0.5f),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}

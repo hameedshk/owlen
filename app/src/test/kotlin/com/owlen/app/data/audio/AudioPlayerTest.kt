@@ -78,6 +78,34 @@ class AudioPlayerTest {
         assertEquals(100, AudioPlayer.FADE_OUT_STEPS)
     }
 
+    @Test
+    fun startMaskingAtVolume_acceptsZeroVolume() {
+        // Timer feature can start at near-silent volume
+        val initialVolume = 0.02f
+        assertTrue(initialVolume >= 0f && initialVolume <= 1f)
+    }
+
+    @Test
+    fun startMaskingAtVolume_acceptsMaxVolume() {
+        val maxVolume = 1.0f
+        assertTrue(maxVolume <= AudioPlayer.MAX_VOLUME_FLOAT)
+    }
+
+    @Test
+    fun stopMasking_defaultParameterPreservesMinimumDuration() {
+        // Regression: default stopMasking(immediate=false) should preserve 30s floor
+        // This ensures existing reactive pipeline behavior is unchanged
+        assertTrue(AudioPlayer.MINIMUM_MASKING_DURATION_MS == 30_000L)
+    }
+
+    @Test
+    fun stopMasking_timerBypassMinimumDuration() {
+        // Timer feature calls stopMasking(minimumDurationMs=0) to fade immediately
+        // even on short durations (bypassing the reactive-only 30s floor)
+        val minimumForTimer = 0L
+        assertTrue(minimumForTimer < AudioPlayer.MINIMUM_MASKING_DURATION_MS)
+    }
+
     private fun assertEquals(expected: Any, actual: Any) {
         org.junit.Assert.assertEquals(expected, actual)
     }

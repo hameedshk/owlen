@@ -3,6 +3,7 @@ package com.owlen.app.presentation.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.googlefonts.Font
@@ -44,6 +45,12 @@ val OwlenTypography = Typography(
         fontSize = 24.sp,
         letterSpacing = (-0.5).sp
     ),
+    headlineSmall = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp,
+        letterSpacing = (-0.5).sp
+    ),
     titleLarge = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.SemiBold,
@@ -54,6 +61,11 @@ val OwlenTypography = Typography(
         fontWeight = FontWeight.Medium,
         fontSize = 18.sp
     ),
+    titleSmall = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 16.sp
+    ),
     bodyLarge = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
@@ -63,6 +75,11 @@ val OwlenTypography = Typography(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = InterFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 13.sp
     ),
     labelLarge = TextStyle(
         fontFamily = InterFontFamily,
@@ -88,13 +105,25 @@ private val OwlenColorScheme = darkColorScheme(
     background = Background,
     surface = SurfaceCard,
     surfaceVariant = SurfaceSunken,
+    surfaceContainer = SurfaceCard,
+    surfaceContainerHigh = SurfaceElevated,
+    surfaceContainerHighest = SurfaceElevated,
     primary = Primary,
     onPrimary = OnPrimary,
+    secondary = Primary,
+    secondaryContainer = Primary.copy(alpha = 0.2f),
+    onSecondary = OnPrimary,
+    tertiary = Green,
+    onTertiary = OnPrimary,
+    error = Safety,
+    onError = OnPrimary,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     onSurfaceVariant = TextSecondary,
     outline = Stroke,
     outlineVariant = Stroke,
+    inverseSurface = SurfaceCard,
+    scrim = Color.Black.copy(alpha = 0.6f),
 )
 
 @Composable
@@ -102,6 +131,7 @@ fun OwlenTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = OwlenColorScheme,
         typography = OwlenTypography,
+        shapes = OwlenShapes,
         content = content
     )
 }

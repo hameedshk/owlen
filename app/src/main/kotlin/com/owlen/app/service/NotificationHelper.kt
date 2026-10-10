@@ -103,6 +103,38 @@ class NotificationHelper(private val context: Context) {
             .build()
     }
 
+    fun createTimedPlaybackNotification(context: Context, sound: MaskingSound, remainingMs: Long): Notification {
+        val minutes = (remainingMs / 60_000L).coerceAtLeast(0L)
+        val stopIntent = Intent(context, SleepProtectionService::class.java).apply {
+            action = SleepProtectionService.ACTION_STOP_TIMER
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            context,
+            3,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val contentIntent = Intent(context, MainActivity::class.java)
+        val contentPendingIntent = PendingIntent.getActivity(
+            context,
+            4,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(context, PROTECTION_CHANNEL_ID)
+            .setContentTitle("Sleep timer: ${sound.displayName}")
+            .setContentText("$minutes min remaining")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentIntent(contentPendingIntent)
+            .setOngoing(true)
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .addAction(0, "Stop", stopPendingIntent)
+            .build()
+    }
+
     fun createInterruptionNotification(context: Context, interruptedAt: Long): Notification {
         val intent = Intent(context, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(

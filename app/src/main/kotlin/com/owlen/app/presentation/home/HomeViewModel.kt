@@ -82,6 +82,10 @@ class HomeViewModel @Inject constructor(
         .map { it.isActive() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    val isTimerActive: StateFlow<Boolean> = serviceRepository.state
+        .map { it is ServiceState.TimedPlaybackActive }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     fun setProtectionEnabled(enabled: Boolean) {
         if (enabled) {
             SleepProtectionService.start(appContext)
@@ -98,6 +102,6 @@ class HomeViewModel @Inject constructor(
 
     private fun ServiceState.isActive(): Boolean = when (this) {
         ServiceState.Idle, is ServiceState.Interrupted -> false
-        ServiceState.Monitoring, is ServiceState.MaskingActive, is ServiceState.SafetyAlertActive -> true
+        ServiceState.Monitoring, is ServiceState.MaskingActive, is ServiceState.SafetyAlertActive, is ServiceState.TimedPlaybackActive -> true
     }
 }

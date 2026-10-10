@@ -21,6 +21,7 @@ class AudioPlayer : Closeable {
         const val FADE_OUT_STEPS = 100
         const val FADE_OUT_STEP_DELAY_MS = 20L
         const val MINIMUM_MASKING_DURATION_MS = 30_000L
+        const val MAX_VOLUME_FLOAT = 1.0f
     }
 
     private val noiseBuffers = mutableMapOf<MaskingSound, ShortArray>()
@@ -45,7 +46,7 @@ class AudioPlayer : Closeable {
 
     suspend fun startMasking(sound: MaskingSound, volume: Float, maxVolume: Float) {
         withContext(Dispatchers.Default) {
-            val cappedVolume = volume.coerceAtMost(maxVolume)
+            val cappedVolume = volume.coerceAtMost(maxVolume).coerceIn(0f, MAX_VOLUME_FLOAT)
             val noiseBuffer = bufferFor(sound)
 
             audioTrack = AudioTrack.Builder()
@@ -84,7 +85,40 @@ class AudioPlayer : Closeable {
         }
     }
 
-    suspend fun stopMasking(immediate: Boolean = false) {
+    suspend fun startMaskingAtVolume(sound: MaskingSound, initialVolume: Float, maxVolume: Float) {
+        withContext(Dispatchers.Default) {
+            val cappedVolume = initialVolume.coerceAtMost(maxVolume).coerceIn(0f, MAX_VOLUME_FLOAT)
+            val noiseBuffer = bufferFor(sound)
+
+            audioTrack = AudioTrack.Builder()
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AUDIO_USAGE)
+                        .setContentType(CONTENT_TYPE)
+                        .build()
+                )
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setSampleRate(PLAYBACK_SAMPLE_RATE)
+                        .setChannelMask(CHANNEL_CONFIG)
+                        .setEncoding(AUDIO_FORMAT)
+                        .build()
+                )
+                .setBufferSizeInBytes(noiseBuffer.size * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+
+            audioTrack?.write(noiseBuffer, 0, noiseBuffer.size)
+            audioTrack?.setLoopPoints(0, noiseBuffer.size, -1)
+            audioTrack?.play()
+
+            startMaskingTimeMs = System.currentTimeMillis()
+            audioTrack?.setVolume(cappedVolume)
+            currentVolume = cappedVolume
+        }
+    }
+
+    suspend fun stopMasking(immediate: Boolean = false, minimumDurationMs: Long = MINIMUM_MASKING_DURATION_MS) {
         withContext(Dispatchers.Default) {
             if (immediate) {
                 audioTrack?.stop()
@@ -93,7 +127,7 @@ class AudioPlayer : Closeable {
                 currentVolume = 0f
             } else {
                 val elapsedMs = System.currentTimeMillis() - startMaskingTimeMs
-                if (elapsedMs < MINIMUM_MASKING_DURATION_MS) {
+                if (elapsedMs < minimumDurationMs) {
                     return@withContext  // Do not stop
                 }
 
@@ -114,7 +148,7 @@ class AudioPlayer : Closeable {
 
     suspend fun setVolume(volume: Float, maxVolume: Float) {
         withContext(Dispatchers.Default) {
-            val cappedVolume = volume.coerceAtMost(maxVolume)
+            val cappedVolume = volume.coerceAtMost(maxVolume).coerceIn(0f, MAX_VOLUME_FLOAT)
             audioTrack?.setVolume(cappedVolume)
             currentVolume = cappedVolume
         }

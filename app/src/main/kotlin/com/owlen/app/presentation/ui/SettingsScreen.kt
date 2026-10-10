@@ -43,7 +43,9 @@ import com.owlen.app.presentation.ui.components.NeoPopDialog
 import com.owlen.app.presentation.ui.components.NeoPopRadio
 import com.owlen.app.presentation.ui.components.NeoPopRow
 import com.owlen.app.presentation.ui.components.NeoPopRowDivider
+import com.owlen.app.presentation.ui.components.OptionPickerDialog
 import com.owlen.app.presentation.ui.components.SectionHeader
+import com.owlen.app.presentation.ui.components.SliderDialog
 import com.owlen.app.presentation.ui.components.neoPopSliderColors
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
@@ -73,6 +75,7 @@ fun SettingsScreen(
     onNavigateToEnrollment: () -> Unit = {},
     onDeletePrototype: (String) -> Unit = {},
     onNavigateToSleepSchedule: () -> Unit = {},
+    onNavigateToSleepTimer: () -> Unit = {},
     onSoundSelected: (MaskingSound) -> Unit = {},
     onMaxVolumeChanged: (Int) -> Unit = {},
     onSensitivitySelected: (Sensitivity) -> Unit = {},
@@ -132,6 +135,13 @@ fun SettingsScreen(
                 label = "Sleep Schedule",
                 value = "$sleepFormatted – $wakeFormatted",
                 onClick = onNavigateToSleepSchedule
+            )
+            NeoPopRowDivider()
+
+            SettingsRow(
+                label = "Sleep Timer",
+                value = "Set alarm",
+                onClick = onNavigateToSleepTimer
             )
             NeoPopRowDivider()
 
@@ -383,75 +393,6 @@ fun SettingsScreen(
         )
 
         SettingsDialog.NONE -> Unit
-    }
-}
-
-@Composable
-private fun OptionPickerDialog(
-    title: String,
-    options: List<String>,
-    selectedIndex: Int,
-    onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    NeoPopDialog(
-        title = title,
-        onDismiss = onDismiss,
-        dismissText = "Close"
-    ) {
-        options.forEachIndexed { index, option ->
-            val selected = index == selectedIndex
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(selected = selected, onClick = { onSelect(index) })
-                    .padding(vertical = 12.dp, horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                NeoPopRadio(selected = selected)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = option,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (selected) Primary else TextPrimary
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SliderDialog(
-    title: String,
-    initialValue: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    steps: Int,
-    formatValue: (Float) -> String,
-    onConfirm: (Float) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var sliderValue by remember { mutableFloatStateOf(initialValue) }
-
-    NeoPopDialog(
-        title = title,
-        onDismiss = onDismiss,
-        confirmText = "Save",
-        onConfirm = { onConfirm(sliderValue) },
-        dismissText = "Cancel"
-    ) {
-        Text(
-            text = formatValue(sliderValue),
-            style = MaterialTheme.typography.bodyLarge,
-            color = Primary
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Slider(
-            value = sliderValue,
-            onValueChange = { sliderValue = it },
-            valueRange = valueRange,
-            steps = steps,
-            colors = neoPopSliderColors()
-        )
     }
 }
 

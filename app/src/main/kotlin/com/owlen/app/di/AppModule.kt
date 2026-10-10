@@ -13,9 +13,11 @@ import com.owlen.app.domain.matcher.EventArbiter
 import com.owlen.app.domain.matcher.PrototypeBuilder
 import com.owlen.app.domain.policy.PolicyEngine
 import com.owlen.app.domain.scorer.DisturbanceScorer
+import com.owlen.app.domain.timer.SleepTimerCalculator
 import com.owlen.app.service.ServiceRepository
 import dagger.Module
 import dagger.Provides
+import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
@@ -43,6 +45,10 @@ object AppModule {
     @Singleton
     @Provides
     fun provideDisturbanceScorer(): DisturbanceScorer = DisturbanceScorer()
+
+    @Singleton
+    @Provides
+    fun provideSleepTimerCalculator(): SleepTimerCalculator = SleepTimerCalculator()
 
     @Singleton
     @Provides
@@ -76,4 +82,10 @@ object AppModule {
     @Singleton
     @Provides
     fun provideEventArbiter(): EventArbiter = EventArbiter()
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface SettingsEntryPoint {
+        fun settingsRepository(): SettingsRepository
+    }
 }

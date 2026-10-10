@@ -19,11 +19,13 @@ import com.owlen.app.domain.matcher.CustomSoundMatcher
 import com.owlen.app.domain.matcher.EventArbiter
 import com.owlen.app.domain.model.DetectedEvent
 import com.owlen.app.domain.model.DisturbanceResult
+import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.PolicyAction
 import com.owlen.app.domain.model.SleepSettings
 import com.owlen.app.domain.model.SoundPrototype
 import com.owlen.app.domain.policy.PolicyEngine
 import com.owlen.app.domain.scorer.DisturbanceScorer
+import com.owlen.app.domain.timer.SleepTimerCalculator
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -76,10 +78,14 @@ class SleepProtectionService : Service() {
     @Inject
     lateinit var eventArbiter: EventArbiter
 
+    @Inject
+    lateinit var sleepTimerCalculator: SleepTimerCalculator
+
     private lateinit var notificationHelper: NotificationHelper
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var pipelineJob: Job? = null
+    private var timedPlaybackJob: Job? = null
     private lateinit var wakeLock: PowerManager.WakeLock
 
     // State tracked across inference cycles
@@ -137,18 +143,43 @@ class SleepProtectionService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
-            stoppedByUser = true
-            stopSelf()
-            return START_NOT_STICKY
+        return when (intent?.action) {
+            ACTION_STOP -> {
+                stoppedByUser = true
+                stopSelf()
+                START_NOT_STICKY
+            }
+            ACTION_STOP_TIMER -> {
+                stopTimedPlayback(immediate = false)
+                START_NOT_STICKY
+            }
+            ACTION_START_TIMER -> {
+                if (pipelineJob?.isActive == true) {
+                    return START_NOT_STICKY
+                }
+                val sound = intent.getStringExtra(EXTRA_SOUND)?.let {
+                    try {
+                        MaskingSound.valueOf(it)
+                    } catch (e: IllegalArgumentException) {
+                        return@let null
+                    }
+                } ?: return START_NOT_STICKY
+                val durationMs = intent.getLongExtra(EXTRA_DURATION_MS, 0L)
+                val targetVolume = intent.getFloatExtra(EXTRA_TARGET_VOLUME, 0.5f)
+                startTimedPlayback(sound, durationMs, targetVolume)
+                START_NOT_STICKY
+            }
+            else -> {
+                startPipeline()
+                START_STICKY
+            }
         }
-        startPipeline()
-        return START_STICKY
     }
 
     override fun onDestroy() {
         logInterruptionIfUnexpected()
         pipelineJob?.cancel()
+        timedPlaybackJob?.cancel()
         audioCapture.stop()
         // Immediate silence; keep singletons (interpreter, player) alive for the next session
         audioPlayer.close()
@@ -184,6 +215,7 @@ class SleepProtectionService : Service() {
 
     private fun startPipeline() {
         if (pipelineJob?.isActive == true) return
+        if (timedPlaybackJob?.isActive == true) return
         serviceStartedByUser = true
         serviceStartTimeMs = System.currentTimeMillis()
         stoppedByUser = false
@@ -245,6 +277,55 @@ class SleepProtectionService : Service() {
                 handleAction(action, event, result, settings)
             }
         }
+    }
+
+    private fun startTimedPlayback(sound: MaskingSound, durationMs: Long, targetVolume: Float) {
+        if (timedPlaybackJob?.isActive == true) timedPlaybackJob?.cancel()
+        timedPlaybackJob = serviceScope.launch {
+            audioPlayer.startMaskingAtVolume(sound, SleepTimerCalculator.NEAR_SILENT_VOLUME, targetVolume)
+            val tickMs = 1_000L
+            val rampStartTimeMs = System.currentTimeMillis()
+            var lastNotifiedMinute = -1
+
+            while (true) {
+                val elapsedMs = System.currentTimeMillis() - rampStartTimeMs
+                if (elapsedMs >= durationMs) break
+
+                val vol = sleepTimerCalculator.volumeAt(elapsedMs, durationMs, targetVolume)
+                audioPlayer.setVolume(vol, targetVolume)
+                val remaining = durationMs - elapsedMs
+                serviceRepository.updateState(ServiceState.TimedPlaybackActive(sound, vol, remaining, durationMs))
+
+                val minute = (remaining / 60_000L).toInt()
+                if (minute != lastNotifiedMinute) {
+                    lastNotifiedMinute = minute
+                    updateNotification(
+                        notificationHelper.createTimedPlaybackNotification(
+                            this@SleepProtectionService, sound, remaining
+                        )
+                    )
+                }
+                delay(tickMs)
+            }
+
+            audioPlayer.stopMasking(immediate = false, minimumDurationMs = 0L)
+            finishTimedPlayback()
+        }
+    }
+
+    private fun stopTimedPlayback(immediate: Boolean) {
+        timedPlaybackJob?.cancel()
+        timedPlaybackJob = null
+        serviceScope.launch {
+            audioPlayer.stopMasking(immediate = immediate, minimumDurationMs = 0L)
+            finishTimedPlayback()
+        }
+    }
+
+    private fun finishTimedPlayback() {
+        timedPlaybackJob = null
+        serviceRepository.updateState(ServiceState.Idle)
+        if (pipelineJob?.isActive != true) stopSelf()
     }
 
     private fun handleAction(
@@ -353,6 +434,11 @@ class SleepProtectionService : Service() {
         const val SAFETY_NOTIFICATION_ID = 1002
         const val INTERRUPTION_NOTIFICATION_ID = 1003
         const val ACTION_STOP = "com.owlen.app.action.STOP_PROTECTION"
+        const val ACTION_START_TIMER = "com.owlen.app.action.START_TIMER"
+        const val ACTION_STOP_TIMER = "com.owlen.app.action.STOP_TIMER"
+        const val EXTRA_SOUND = "sound"
+        const val EXTRA_DURATION_MS = "duration_ms"
+        const val EXTRA_TARGET_VOLUME = "target_volume"
 
         fun start(context: Context) {
             val intent = Intent(context, SleepProtectionService::class.java)
@@ -362,6 +448,23 @@ class SleepProtectionService : Service() {
         fun stop(context: Context) {
             val intent = Intent(context, SleepProtectionService::class.java).apply {
                 action = ACTION_STOP
+            }
+            context.startService(intent)
+        }
+
+        fun startTimer(context: Context, sound: MaskingSound, durationMs: Long, targetVolume: Float) {
+            val intent = Intent(context, SleepProtectionService::class.java).apply {
+                action = ACTION_START_TIMER
+                putExtra(EXTRA_SOUND, sound.name)
+                putExtra(EXTRA_DURATION_MS, durationMs)
+                putExtra(EXTRA_TARGET_VOLUME, targetVolume)
+            }
+            context.startForegroundService(intent)
+        }
+
+        fun stopTimer(context: Context) {
+            val intent = Intent(context, SleepProtectionService::class.java).apply {
+                action = ACTION_STOP_TIMER
             }
             context.startService(intent)
         }

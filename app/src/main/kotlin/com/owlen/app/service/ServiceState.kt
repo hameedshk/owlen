@@ -17,4 +17,10 @@ sealed class ServiceState {
         val interruptedAt: Long,
         val resumedAt: Long
     ) : ServiceState()
+    data class TimedPlaybackActive(
+        val sound: MaskingSound,
+        val volume: Float,
+        val remainingMs: Long,
+        val totalDurationMs: Long
+    ) : ServiceState()
 }
