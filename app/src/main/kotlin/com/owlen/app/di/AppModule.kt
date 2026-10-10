@@ -48,7 +48,7 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideSleepTimerCalculator(): SleepTimerCalculator = SleepTimerCalculator()
+    fun provideSleepTimerCalculator(): SleepTimerCalculator = SleepTimerCalculator
 
     @Singleton
     @Provides

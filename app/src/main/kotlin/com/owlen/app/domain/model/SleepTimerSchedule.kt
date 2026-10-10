@@ -6,5 +6,7 @@ data class SleepTimerSchedule(
     val startMinute: Int = 0,
     val endHour: Int = 8,
     val endMinute: Int = 0,
-    val sound: MaskingSound = MaskingSound.RAIN
+    val sound: MaskingSound = MaskingSound.RAIN,
+    val fadeInMinutes: Int = 10,
+    val maxVolume: Float = 0.5f
 )
