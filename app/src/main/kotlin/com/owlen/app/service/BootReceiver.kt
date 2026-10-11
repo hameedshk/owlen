@@ -13,12 +13,17 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent?.action != Intent.ACTION_BOOT_COMPLETED || context == null) return
 
+        val goAsync = goAsync()
         val entryPoint = EntryPoints.get(context, AppModule.SettingsEntryPoint::class.java)
         GlobalScope.launch {
-            val schedule = entryPoint.settingsRepository().getSchedule()
-            if (schedule.enabled) {
-                val scheduler = SleepTimerScheduler(context)
-                scheduler.scheduleNext(schedule)
+            try {
+                val schedule = entryPoint.settingsRepository().getSchedule()
+                if (schedule.enabled) {
+                    val scheduler = SleepTimerScheduler(context)
+                    scheduler.scheduleNext(schedule)
+                }
+            } finally {
+                goAsync.finish()
             }
         }
     }

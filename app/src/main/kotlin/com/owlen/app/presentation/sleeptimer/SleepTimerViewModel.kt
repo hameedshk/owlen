@@ -47,17 +47,14 @@ class SleepTimerViewModel @Inject constructor(
         SleepProtectionService.stopTimer(appContext)
     }
 
-    fun saveSchedule(hour: Int, minute: Int, enabled: Boolean) {
+    fun saveSchedule(schedule: SleepTimerSchedule) {
         viewModelScope.launch {
-            val newSchedule = SleepTimerSchedule(
-                startHour = hour,
-                startMinute = minute,
-                enabled = enabled
-            )
-            settingsRepository.updateSchedule(newSchedule)
-            if (enabled) {
-                val scheduler = SleepTimerScheduler(appContext)
-                scheduler.scheduleNext(newSchedule)
+            settingsRepository.updateSchedule(schedule)
+            val scheduler = SleepTimerScheduler(appContext)
+            if (schedule.enabled) {
+                scheduler.scheduleNext(schedule)
+            } else {
+                scheduler.cancel()
             }
         }
     }

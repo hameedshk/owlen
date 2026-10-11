@@ -42,6 +42,12 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class SleepProtectionService : Service() {
 
+    enum class PlaybackMode {
+        TIMER,    // User-initiated timer playback
+        SCHEDULE, // Nightly scheduled playback
+        PREVIEW   // Quick preview for settings
+    }
+
     @Inject
     lateinit var audioCapture: AudioCapture
 
@@ -166,7 +172,15 @@ class SleepProtectionService : Service() {
                 } ?: return START_NOT_STICKY
                 val durationMs = intent.getLongExtra(EXTRA_DURATION_MS, 0L)
                 val targetVolume = intent.getFloatExtra(EXTRA_TARGET_VOLUME, 0.5f)
-                startTimedPlayback(sound, durationMs, targetVolume)
+                val mode = intent.getStringExtra(EXTRA_MODE)?.let {
+                    try {
+                        PlaybackMode.valueOf(it)
+                    } catch (e: IllegalArgumentException) {
+                        PlaybackMode.TIMER
+                    }
+                } ?: PlaybackMode.TIMER
+                val fadeMs = intent.getLongExtra(EXTRA_FADE_MS, 0L)
+                startTimedPlayback(sound, durationMs, targetVolume, mode, fadeMs)
                 START_NOT_STICKY
             }
             else -> {
@@ -279,7 +293,13 @@ class SleepProtectionService : Service() {
         }
     }
 
-    private fun startTimedPlayback(sound: MaskingSound, durationMs: Long, targetVolume: Float) {
+    private fun startTimedPlayback(
+        sound: MaskingSound,
+        durationMs: Long,
+        targetVolume: Float,
+        mode: PlaybackMode = PlaybackMode.TIMER,
+        fadeMs: Long = 0L
+    ) {
         if (timedPlaybackJob?.isActive == true) timedPlaybackJob?.cancel()
         timedPlaybackJob = serviceScope.launch {
             audioPlayer.startMaskingAtVolume(sound, SleepTimerCalculator.NEAR_SILENT_VOLUME, targetVolume)
@@ -291,7 +311,11 @@ class SleepProtectionService : Service() {
                 val elapsedMs = System.currentTimeMillis() - rampStartTimeMs
                 if (elapsedMs >= durationMs) break
 
-                val vol = sleepTimerCalculator.volumeAt(elapsedMs, durationMs, targetVolume)
+                val vol = when (mode) {
+                    PlaybackMode.TIMER -> sleepTimerCalculator.fadeOutVolume(elapsedMs, durationMs, fadeMs, targetVolume)
+                    PlaybackMode.SCHEDULE -> sleepTimerCalculator.fadeInVolume(elapsedMs, fadeMs, targetVolume)
+                    PlaybackMode.PREVIEW -> targetVolume
+                }
                 audioPlayer.setVolume(vol, targetVolume)
                 val remaining = durationMs - elapsedMs
                 serviceRepository.updateState(ServiceState.TimedPlaybackActive(sound, vol, remaining, durationMs))
@@ -439,6 +463,8 @@ class SleepProtectionService : Service() {
         const val EXTRA_SOUND = "sound"
         const val EXTRA_DURATION_MS = "duration_ms"
         const val EXTRA_TARGET_VOLUME = "target_volume"
+        const val EXTRA_MODE = "mode"
+        const val EXTRA_FADE_MS = "fade_ms"
 
         fun start(context: Context) {
             val intent = Intent(context, SleepProtectionService::class.java)
@@ -452,12 +478,21 @@ class SleepProtectionService : Service() {
             context.startService(intent)
         }
 
-        fun startTimer(context: Context, sound: MaskingSound, durationMs: Long, targetVolume: Float) {
+        fun startTimer(
+            context: Context,
+            sound: MaskingSound,
+            durationMs: Long,
+            targetVolume: Float,
+            mode: PlaybackMode = PlaybackMode.TIMER,
+            fadeMs: Long = 0L
+        ) {
             val intent = Intent(context, SleepProtectionService::class.java).apply {
                 action = ACTION_START_TIMER
                 putExtra(EXTRA_SOUND, sound.name)
                 putExtra(EXTRA_DURATION_MS, durationMs)
                 putExtra(EXTRA_TARGET_VOLUME, targetVolume)
+                putExtra(EXTRA_MODE, mode.name)
+                putExtra(EXTRA_FADE_MS, fadeMs)
             }
             context.startForegroundService(intent)
         }

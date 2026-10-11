@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.owlen.app.domain.model.MaskingSound
+import com.owlen.app.domain.model.SleepTimerSchedule
 import com.owlen.app.presentation.sleeptimer.SleepTimerViewModel
 import com.owlen.app.presentation.ui.components.OptionPickerDialog
 import com.owlen.app.presentation.ui.components.RangePickerDialog
@@ -73,7 +74,12 @@ fun SleepTimerScreen(viewModel: SleepTimerViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Button(onClick = {
-            viewModel.saveSchedule(scheduledHour, scheduledMinute, enabled = true)
+            val updatedSchedule = schedule.copy(
+                startHour = scheduledHour,
+                startMinute = scheduledMinute,
+                enabled = true
+            )
+            viewModel.saveSchedule(updatedSchedule)
         }) {
             Text("Enable Schedule")
         }

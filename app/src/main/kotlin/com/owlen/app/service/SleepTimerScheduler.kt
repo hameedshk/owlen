@@ -25,6 +25,8 @@ class SleepTimerScheduler(private val context: Context) {
             putExtra("sound", schedule.sound.name)
             putExtra("end_hour", schedule.endHour)
             putExtra("end_minute", schedule.endMinute)
+            putExtra("fade_in_minutes", schedule.fadeInMinutes)
+            putExtra("max_volume", schedule.maxVolume)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
