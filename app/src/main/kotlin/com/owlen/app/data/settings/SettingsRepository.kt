@@ -13,6 +13,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
 import com.owlen.app.domain.model.SleepSettings
+import com.owlen.app.domain.model.SleepTimerConfig
 import com.owlen.app.domain.model.SleepTimerSchedule
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -45,6 +46,72 @@ class SettingsRepository @Inject constructor(
         private val SCHEDULE_END_HOUR = intPreferencesKey("schedule_end_hour")
         private val SCHEDULE_END_MINUTE = intPreferencesKey("schedule_end_minute")
         private val SCHEDULE_SOUND = stringPreferencesKey("schedule_sound")
+        private val SCHEDULE_FADE_IN_MINUTES = intPreferencesKey("schedule_fade_in_minutes")
+        private val SCHEDULE_MAX_VOLUME = floatPreferencesKey("schedule_max_volume")
+        private val TIMER_DURATION_MINUTES = intPreferencesKey("timer_duration_minutes")
+        private val TIMER_FADE_OUT_MINUTES = intPreferencesKey("timer_fade_out_minutes")
+        private val TIMER_SOUND = stringPreferencesKey("timer_sound")
+    }
+
+    private fun preferencesToSettings(pref: Preferences): SleepSettings {
+        return SleepSettings(
+            sleepWindowStartHour = pref[SLEEP_WINDOW_START] ?: SleepSettings.default().sleepWindowStartHour,
+            sleepWindowEndHour = pref[SLEEP_WINDOW_END] ?: SleepSettings.default().sleepWindowEndHour,
+            wakeTimeHour = pref[WAKE_TIME_HOUR] ?: SleepSettings.default().wakeTimeHour,
+            wakeTimeMinute = pref[WAKE_TIME_MINUTE] ?: SleepSettings.default().wakeTimeMinute,
+            sensitivity = pref[SENSITIVITY]?.let {
+                try {
+                    Sensitivity.valueOf(it)
+                } catch (e: IllegalArgumentException) {
+                    SleepSettings.default().sensitivity
+                }
+            } ?: SleepSettings.default().sensitivity,
+            maxVolume = pref[MAX_VOLUME] ?: SleepSettings.default().maxVolume,
+            preferredSound = pref[PREFERRED_SOUND]?.let {
+                try {
+                    MaskingSound.valueOf(it)
+                } catch (e: IllegalArgumentException) {
+                    SleepSettings.default().preferredSound
+                }
+            } ?: SleepSettings.default().preferredSound,
+            autoStopDurationMs = pref[AUTO_STOP_DURATION]?.toLong() ?: SleepSettings.default().autoStopDurationMs,
+            rainBehaviourEnabled = pref[RAIN_BEHAVIOUR] ?: SleepSettings.default().rainBehaviourEnabled,
+            soundLevelFloor = pref[SOUND_LEVEL_FLOOR] ?: SleepSettings.default().soundLevelFloor
+        )
+    }
+
+    private fun preferencesToSchedule(pref: Preferences): SleepTimerSchedule {
+        return SleepTimerSchedule(
+            enabled = pref[SCHEDULE_ENABLED] ?: false,
+            startHour = pref[SCHEDULE_START_HOUR] ?: 6,
+            startMinute = pref[SCHEDULE_START_MINUTE] ?: 0,
+            endHour = pref[SCHEDULE_END_HOUR] ?: 8,
+            endMinute = pref[SCHEDULE_END_MINUTE] ?: 0,
+            sound = pref[SCHEDULE_SOUND]?.let {
+                try {
+                    MaskingSound.valueOf(it)
+                } catch (e: IllegalArgumentException) {
+                    MaskingSound.RAIN
+                }
+            } ?: MaskingSound.RAIN,
+            fadeInMinutes = pref[SCHEDULE_FADE_IN_MINUTES] ?: 10,
+            maxVolume = pref[SCHEDULE_MAX_VOLUME] ?: 0.5f
+        )
+    }
+
+    private fun preferencesToTimerConfig(pref: Preferences): SleepTimerConfig {
+        return SleepTimerConfig(
+            sound = pref[TIMER_SOUND]?.let {
+                try {
+                    MaskingSound.valueOf(it)
+                } catch (e: IllegalArgumentException) {
+                    MaskingSound.RAIN
+                }
+            } ?: MaskingSound.RAIN,
+            durationMinutes = pref[TIMER_DURATION_MINUTES] ?: 30,
+            fadeOutMinutes = pref[TIMER_FADE_OUT_MINUTES] ?: 10,
+            maxVolume = 0.7f
+        )
     }
 
     /** Epoch day (days since 1970-01-01) of the most recent calibration; -1 if never run. */
@@ -59,30 +126,7 @@ class SettingsRepository @Inject constructor(
     }
 
     val settings: Flow<SleepSettings> = context.dataStore.data.map { preferences ->
-        SleepSettings(
-            sleepWindowStartHour = preferences[SLEEP_WINDOW_START] ?: SleepSettings.default().sleepWindowStartHour,
-            sleepWindowEndHour = preferences[SLEEP_WINDOW_END] ?: SleepSettings.default().sleepWindowEndHour,
-            wakeTimeHour = preferences[WAKE_TIME_HOUR] ?: SleepSettings.default().wakeTimeHour,
-            wakeTimeMinute = preferences[WAKE_TIME_MINUTE] ?: SleepSettings.default().wakeTimeMinute,
-            sensitivity = preferences[SENSITIVITY]?.let {
-                try {
-                    Sensitivity.valueOf(it)
-                } catch (e: IllegalArgumentException) {
-                    SleepSettings.default().sensitivity
-                }
-            } ?: SleepSettings.default().sensitivity,
-            maxVolume = preferences[MAX_VOLUME] ?: SleepSettings.default().maxVolume,
-            preferredSound = preferences[PREFERRED_SOUND]?.let {
-                try {
-                    MaskingSound.valueOf(it)
-                } catch (e: IllegalArgumentException) {
-                    SleepSettings.default().preferredSound
-                }
-            } ?: SleepSettings.default().preferredSound,
-            autoStopDurationMs = preferences[AUTO_STOP_DURATION]?.toLong() ?: SleepSettings.default().autoStopDurationMs,
-            rainBehaviourEnabled = preferences[RAIN_BEHAVIOUR] ?: SleepSettings.default().rainBehaviourEnabled,
-            soundLevelFloor = preferences[SOUND_LEVEL_FLOOR] ?: SleepSettings.default().soundLevelFloor
-        )
+        preferencesToSettings(preferences)
     }
 
     suspend fun updateSleepWindow(startHour: Int, endHour: Int) {
@@ -137,65 +181,16 @@ class SettingsRepository @Inject constructor(
 
     suspend fun getSettings(): SleepSettings {
         val pref = context.dataStore.data.first()
-        return SleepSettings(
-            sleepWindowStartHour = pref[SLEEP_WINDOW_START] ?: SleepSettings.default().sleepWindowStartHour,
-            sleepWindowEndHour = pref[SLEEP_WINDOW_END] ?: SleepSettings.default().sleepWindowEndHour,
-            wakeTimeHour = pref[WAKE_TIME_HOUR] ?: SleepSettings.default().wakeTimeHour,
-            wakeTimeMinute = pref[WAKE_TIME_MINUTE] ?: SleepSettings.default().wakeTimeMinute,
-            sensitivity = pref[SENSITIVITY]?.let {
-                try {
-                    Sensitivity.valueOf(it)
-                } catch (e: IllegalArgumentException) {
-                    SleepSettings.default().sensitivity
-                }
-            } ?: SleepSettings.default().sensitivity,
-            maxVolume = pref[MAX_VOLUME] ?: SleepSettings.default().maxVolume,
-            preferredSound = pref[PREFERRED_SOUND]?.let {
-                try {
-                    MaskingSound.valueOf(it)
-                } catch (e: IllegalArgumentException) {
-                    SleepSettings.default().preferredSound
-                }
-            } ?: SleepSettings.default().preferredSound,
-            autoStopDurationMs = pref[AUTO_STOP_DURATION]?.toLong() ?: SleepSettings.default().autoStopDurationMs,
-            rainBehaviourEnabled = pref[RAIN_BEHAVIOUR] ?: SleepSettings.default().rainBehaviourEnabled,
-            soundLevelFloor = pref[SOUND_LEVEL_FLOOR] ?: SleepSettings.default().soundLevelFloor
-        )
+        return preferencesToSettings(pref)
     }
 
     val schedule: Flow<SleepTimerSchedule> = context.dataStore.data.map { pref ->
-        SleepTimerSchedule(
-            enabled = pref[SCHEDULE_ENABLED] ?: false,
-            startHour = pref[SCHEDULE_START_HOUR] ?: 6,
-            startMinute = pref[SCHEDULE_START_MINUTE] ?: 0,
-            endHour = pref[SCHEDULE_END_HOUR] ?: 8,
-            endMinute = pref[SCHEDULE_END_MINUTE] ?: 0,
-            sound = pref[SCHEDULE_SOUND]?.let {
-                try {
-                    MaskingSound.valueOf(it)
-                } catch (e: IllegalArgumentException) {
-                    MaskingSound.RAIN
-                }
-            } ?: MaskingSound.RAIN
-        )
+        preferencesToSchedule(pref)
     }
 
     suspend fun getSchedule(): SleepTimerSchedule {
         val pref = context.dataStore.data.first()
-        return SleepTimerSchedule(
-            enabled = pref[SCHEDULE_ENABLED] ?: false,
-            startHour = pref[SCHEDULE_START_HOUR] ?: 6,
-            startMinute = pref[SCHEDULE_START_MINUTE] ?: 0,
-            endHour = pref[SCHEDULE_END_HOUR] ?: 8,
-            endMinute = pref[SCHEDULE_END_MINUTE] ?: 0,
-            sound = pref[SCHEDULE_SOUND]?.let {
-                try {
-                    MaskingSound.valueOf(it)
-                } catch (e: IllegalArgumentException) {
-                    MaskingSound.RAIN
-                }
-            } ?: MaskingSound.RAIN
-        )
+        return preferencesToSchedule(pref)
     }
 
     suspend fun updateSchedule(schedule: SleepTimerSchedule) {
@@ -206,6 +201,25 @@ class SettingsRepository @Inject constructor(
             preferences[SCHEDULE_END_HOUR] = schedule.endHour
             preferences[SCHEDULE_END_MINUTE] = schedule.endMinute
             preferences[SCHEDULE_SOUND] = schedule.sound.name
+            preferences[SCHEDULE_FADE_IN_MINUTES] = schedule.fadeInMinutes
+            preferences[SCHEDULE_MAX_VOLUME] = schedule.maxVolume
+        }
+    }
+
+    val timerConfig: Flow<SleepTimerConfig> = context.dataStore.data.map { pref ->
+        preferencesToTimerConfig(pref)
+    }
+
+    suspend fun getTimerConfig(): SleepTimerConfig {
+        val pref = context.dataStore.data.first()
+        return preferencesToTimerConfig(pref)
+    }
+
+    suspend fun updateTimerConfig(config: SleepTimerConfig) {
+        context.dataStore.edit { preferences ->
+            preferences[TIMER_SOUND] = config.sound.name
+            preferences[TIMER_DURATION_MINUTES] = config.durationMinutes
+            preferences[TIMER_FADE_OUT_MINUTES] = config.fadeOutMinutes
         }
     }
 }
