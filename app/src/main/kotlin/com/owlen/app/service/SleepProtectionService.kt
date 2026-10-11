@@ -503,5 +503,13 @@ class SleepProtectionService : Service() {
             }
             context.startService(intent)
         }
+
+        fun startPreview(context: Context, sound: MaskingSound, durationMs: Long = 5_000L, volume: Float = 0.5f) {
+            startTimer(context, sound, durationMs, volume, PlaybackMode.PREVIEW)
+        }
+
+        fun stopPreview(context: Context) {
+            stopTimer(context)
+        }
     }
 }

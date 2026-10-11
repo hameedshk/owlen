@@ -47,6 +47,14 @@ class SleepTimerViewModel @Inject constructor(
         SleepProtectionService.stopTimer(appContext)
     }
 
+    fun startPreview(sound: MaskingSound, durationMs: Long = 5_000L, volume: Float = 0.5f) {
+        SleepProtectionService.startPreview(appContext, sound, durationMs, volume)
+    }
+
+    fun stopPreview() {
+        SleepProtectionService.stopPreview(appContext)
+    }
+
     fun saveSchedule(schedule: SleepTimerSchedule) {
         viewModelScope.launch {
             settingsRepository.updateSchedule(schedule)
