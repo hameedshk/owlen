@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.owlen.app.data.settings.SettingsRepository
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.SleepSettings
+import com.owlen.app.domain.model.SleepTimerConfig
 import com.owlen.app.domain.model.SleepTimerSchedule
 import com.owlen.app.service.ServiceRepository
 import com.owlen.app.service.ServiceState
@@ -13,8 +14,10 @@ import com.owlen.app.service.SleepProtectionService
 import com.owlen.app.service.SleepTimerScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,6 +30,8 @@ class SleepTimerViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
+    private val scheduler = SleepTimerScheduler(appContext)
+
     val serviceState: StateFlow<ServiceState> = serviceRepository.state
 
     val settings: StateFlow<SleepSettings> = settingsRepository.settings
@@ -35,12 +40,51 @@ class SleepTimerViewModel @Inject constructor(
     val schedule: StateFlow<SleepTimerSchedule> = settingsRepository.schedule
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SleepTimerSchedule())
 
+    val timerConfig: StateFlow<SleepTimerConfig> = settingsRepository.timerConfig
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SleepTimerConfig())
+
     val isProtectionRunning: StateFlow<Boolean> = serviceState
         .map { it is ServiceState.Monitoring || it is ServiceState.MaskingActive || it is ServiceState.SafetyAlertActive }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
-    fun startTimer(sound: MaskingSound, durationMs: Long, targetVolume: Float) {
-        SleepProtectionService.startTimer(appContext, sound, durationMs, targetVolume)
+    /** A countdown belongs on screen only for a real timer — a preview is not a timer. */
+    val isTimerRunning: StateFlow<Boolean> = serviceState
+        .map { state ->
+            state is ServiceState.TimedPlaybackActive &&
+                state.mode == SleepProtectionService.PlaybackMode.TIMER
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val isPreviewPlaying: StateFlow<Boolean> = serviceState
+        .map { state ->
+            state is ServiceState.TimedPlaybackActive &&
+                state.mode == SleepProtectionService.PlaybackMode.PREVIEW
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val _hasExactAlarmPermission = MutableStateFlow(scheduler.hasExactAlarmPermission())
+
+    /** Revocable at any time on Android 12+, so screens re-check this on resume. */
+    val hasExactAlarmPermission: StateFlow<Boolean> = _hasExactAlarmPermission.asStateFlow()
+
+    fun refreshExactAlarmPermission() {
+        _hasExactAlarmPermission.value = scheduler.hasExactAlarmPermission()
+    }
+
+    fun startTimer(
+        sound: MaskingSound,
+        durationMs: Long,
+        targetVolume: Float,
+        fadeOutMs: Long = 0L
+    ) {
+        SleepProtectionService.startTimer(
+            context = appContext,
+            sound = sound,
+            durationMs = durationMs,
+            targetVolume = targetVolume,
+            mode = SleepProtectionService.PlaybackMode.TIMER,
+            fadeMs = fadeOutMs
+        )
     }
 
     fun stopTimer() {
@@ -55,15 +99,21 @@ class SleepTimerViewModel @Inject constructor(
         SleepProtectionService.stopPreview(appContext)
     }
 
+    fun saveTimerConfig(config: SleepTimerConfig) {
+        viewModelScope.launch {
+            settingsRepository.updateTimerConfig(config)
+        }
+    }
+
     fun saveSchedule(schedule: SleepTimerSchedule) {
         viewModelScope.launch {
             settingsRepository.updateSchedule(schedule)
-            val scheduler = SleepTimerScheduler(appContext)
             if (schedule.enabled) {
                 scheduler.scheduleNext(schedule)
             } else {
                 scheduler.cancel()
             }
+            refreshExactAlarmPermission()
         }
     }
 }

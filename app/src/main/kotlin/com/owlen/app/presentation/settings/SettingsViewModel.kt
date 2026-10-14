@@ -7,6 +7,7 @@ import com.owlen.app.data.settings.SettingsRepository
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
 import com.owlen.app.domain.model.SleepSettings
+import com.owlen.app.domain.model.SleepTimerSchedule
 import com.owlen.app.domain.model.SoundPrototype
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +24,10 @@ class SettingsViewModel @Inject constructor(
 
     val settings: StateFlow<SleepSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SleepSettings.default())
+
+    /** Read-only here — the Sleep Schedule screen owns editing it. */
+    val schedule: StateFlow<SleepTimerSchedule> = settingsRepository.schedule
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SleepTimerSchedule())
 
     val customPrototypes: StateFlow<List<SoundPrototype>> = prototypeRepository.prototypes
 

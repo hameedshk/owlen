@@ -2,7 +2,6 @@ package com.owlen.app.presentation.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,49 +10,56 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.BatteryFull
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material.icons.rounded.WbTwilight
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
+import com.owlen.app.domain.model.SleepTimerSchedule
 import com.owlen.app.domain.model.SoundPrototype
+import com.owlen.app.presentation.ui.components.OptionPickerDialog
 import com.owlen.app.presentation.ui.components.OwlenButtonVariant
+import com.owlen.app.presentation.ui.components.OwlenCard
 import com.owlen.app.presentation.ui.components.OwlenDialog
-import com.owlen.app.presentation.ui.components.OwlenRadio
 import com.owlen.app.presentation.ui.components.OwlenRow
 import com.owlen.app.presentation.ui.components.OwlenRowDivider
-import com.owlen.app.presentation.ui.components.OptionPickerDialog
+import com.owlen.app.presentation.ui.components.OwlenScreenHeader
+import com.owlen.app.presentation.ui.components.OwlenSwitchRow
 import com.owlen.app.presentation.ui.components.SectionHeader
 import com.owlen.app.presentation.ui.components.SliderDialog
-import com.owlen.app.presentation.ui.components.owlenSliderColors
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
-import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
-import com.owlen.app.presentation.ui.theme.TextDisabled
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.util.formatHour12h
+import com.owlen.app.presentation.util.formatTime12h
 
 private enum class SettingsDialog {
     NONE, SOUND, VOLUME, SENSITIVITY, AUTO_STOP, SOUND_FLOOR
@@ -71,10 +77,12 @@ fun SettingsScreen(
     soundLevelFloorDb: Int = 50,
     batteryOptimisationAllowed: Boolean = true,
     appVersion: String = "1.0.0",
+    schedule: SleepTimerSchedule = SleepTimerSchedule(),
     customPrototypes: List<SoundPrototype> = emptyList(),
     onNavigateToEnrollment: () -> Unit = {},
     onDeletePrototype: (String) -> Unit = {},
     onNavigateToSleepSchedule: () -> Unit = {},
+    onNavigateToSleepWindow: () -> Unit = {},
     onNavigateToSleepTimer: () -> Unit = {},
     onSoundSelected: (MaskingSound) -> Unit = {},
     onMaxVolumeChanged: (Int) -> Unit = {},
@@ -88,15 +96,11 @@ fun SettingsScreen(
     var openDialog by remember { mutableStateOf(SettingsDialog.NONE) }
     var prototypePendingDelete by remember { mutableStateOf<SoundPrototype?>(null) }
 
-    val sleepFormatted = run {
-        val h = if (sleepHour % 12 == 0) 12 else sleepHour % 12
-        val amPm = if (sleepHour < 12) "AM" else "PM"
-        "$h:00 $amPm"
-    }
-    val wakeFormatted = run {
-        val h = if (wakeHour % 12 == 0) 12 else wakeHour % 12
-        val amPm = if (wakeHour < 12) "AM" else "PM"
-        "$h:00 $amPm"
+    val scheduleValue = if (schedule.enabled) {
+        "${formatTime12h(schedule.startHour, schedule.startMinute)} – " +
+            formatTime12h(schedule.endHour, schedule.endMinute)
+    } else {
+        "Off"
     }
 
     Column(
@@ -104,208 +108,191 @@ fun SettingsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Header
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 24.dp)
-        ) {
-            Text(
-                text = "PREFERENCES",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.headlineMedium,
-                color = TextPrimary
-            )
-        }
+        OwlenScreenHeader(title = "Settings", overline = "Preferences")
 
-        // Settings list card
+        // Playback — what Owlen plays on purpose, with no monitoring involved
         FadeSlideIn {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .neoPopCard()
-        ) {
-            SettingsRow(
-                label = "Sleep Schedule",
-                value = "$sleepFormatted – $wakeFormatted",
-                onClick = onNavigateToSleepSchedule
-            )
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "Sleep Timer",
-                value = "Set alarm",
-                onClick = onNavigateToSleepTimer
-            )
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "Protection Sound",
-                value = preferredSound.displayName,
-                onClick = { openDialog = SettingsDialog.SOUND }
-            )
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "Maximum Volume",
-                value = "$maxVolumePct%",
-                onClick = { openDialog = SettingsDialog.VOLUME }
-            )
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "Sensitivity",
-                value = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
-                onClick = { openDialog = SettingsDialog.SENSITIVITY }
-            )
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "Auto Stop",
-                value = "$autoStopSeconds sec",
-                onClick = { openDialog = SettingsDialog.AUTO_STOP }
-            )
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "Sound Level Floor",
-                value = "$soundLevelFloorDb dB",
-                onClick = { openDialog = SettingsDialog.SOUND_FLOOR }
-            )
-            OwlenRowDivider()
-
-            // Rain behaviour — inline toggle
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Soothing Rain",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = TextPrimary
+            Column {
+                SettingsSection("Playback")
+                OwlenCard(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    contentPadding = 0.dp
+                ) {
+                    SettingsNavRow(
+                        label = "Sleep Schedule",
+                        value = scheduleValue,
+                        icon = Icons.Rounded.Bedtime,
+                        onClick = onNavigateToSleepSchedule
                     )
-                    Text(
-                        text = "Treat rain as soothing — never trigger masking",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                    OwlenRowDivider()
+                    SettingsNavRow(
+                        label = "Sleep Timer",
+                        value = "Play now",
+                        icon = Icons.Rounded.Timer,
+                        onClick = onNavigateToSleepTimer
                     )
                 }
-                Switch(
-                    checked = rainBehaviourEnabled,
-                    onCheckedChange = onRainBehaviourChanged,
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = Green,
-                        checkedThumbColor = TextPrimary,
-                        uncheckedTrackColor = TextDisabled,
-                        uncheckedThumbColor = TextSecondary
-                    )
-                )
             }
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "Battery Optimisation",
-                value = if (batteryOptimisationAllowed) "Allowed" else "Restricted",
-                onClick = onBatteryOptimisationClick
-            )
-            OwlenRowDivider()
-
-            SettingsRow(
-                label = "About Owlen",
-                value = "v$appVersion",
-                onClick = onNavigateToAbout
-            )
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Monitoring window — when reactive protection is allowed to arm
+        FadeSlideIn(delayMillis = 80) {
+            Column {
+                SettingsSection("Sleep Window")
+                OwlenCard(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    contentPadding = 0.dp
+                ) {
+                    SettingsNavRow(
+                        label = "Monitoring Window",
+                        value = "${formatHour12h(sleepHour)} – ${formatHour12h(wakeHour)}",
+                        icon = Icons.Rounded.WbTwilight,
+                        onClick = onNavigateToSleepWindow
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Protection — how Owlen reacts to disturbances
+        FadeSlideIn(delayMillis = 150) {
+            Column {
+                SettingsSection("Protection")
+                OwlenCard(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    contentPadding = 0.dp
+                ) {
+                    SettingsNavRow(
+                        label = "Protection Sound",
+                        value = preferredSound.displayName,
+                        icon = Icons.Rounded.MusicNote,
+                        onClick = { openDialog = SettingsDialog.SOUND }
+                    )
+                    OwlenRowDivider()
+                    SettingsNavRow(
+                        label = "Maximum Volume",
+                        value = "$maxVolumePct%",
+                        icon = Icons.AutoMirrored.Rounded.VolumeUp,
+                        onClick = { openDialog = SettingsDialog.VOLUME }
+                    )
+                    OwlenRowDivider()
+                    SettingsNavRow(
+                        label = "Sensitivity",
+                        value = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },
+                        icon = Icons.Rounded.Tune,
+                        onClick = { openDialog = SettingsDialog.SENSITIVITY }
+                    )
+                    OwlenRowDivider()
+                    SettingsNavRow(
+                        label = "Auto Stop",
+                        value = "$autoStopSeconds sec",
+                        icon = Icons.Rounded.Timer,
+                        onClick = { openDialog = SettingsDialog.AUTO_STOP }
+                    )
+                    OwlenRowDivider()
+                    SettingsNavRow(
+                        label = "Sound Level Floor",
+                        value = "$soundLevelFloorDb dB",
+                        icon = Icons.Rounded.GraphicEq,
+                        onClick = { openDialog = SettingsDialog.SOUND_FLOOR }
+                    )
+                    OwlenRowDivider()
+                    OwlenSwitchRow(
+                        title = "Soothing Rain",
+                        subtitle = "Treat rain as soothing — never trigger masking",
+                        checked = rainBehaviourEnabled,
+                        onCheckedChange = onRainBehaviourChanged,
+                        leading = { SettingsRowIcon(Icons.Rounded.WaterDrop) }
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Custom disturbances — user-enrolled sounds that trigger protection
-        FadeSlideIn(delayMillis = 150) {
-        Column {
-        SectionHeader(
-            text = "Custom Disturbances",
-            modifier = Modifier.padding(horizontal = 20.dp)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .neoPopCard()
-        ) {
-            customPrototypes.forEach { prototype ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+        FadeSlideIn(delayMillis = 220) {
+            Column {
+                SettingsSection("Custom Disturbances")
+                OwlenCard(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    contentPadding = 0.dp
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = prototype.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = TextPrimary
+                    customPrototypes.forEach { prototype ->
+                        OwlenRow(
+                            title = prototype.name,
+                            subtitle = "${prototype.sampleCount} recordings",
+                            trailing = {
+                                IconButton(
+                                    onClick = { prototypePendingDelete = prototype },
+                                    modifier = Modifier.size(48.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Delete,
+                                        contentDescription = "Delete ${prototype.name}",
+                                        tint = TextSecondary
+                                    )
+                                }
+                            }
                         )
-                        Text(
-                            text = "${prototype.sampleCount} recordings",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
-                        )
+                        OwlenRowDivider()
                     }
-                    IconButton(
-                        onClick = { prototypePendingDelete = prototype },
-                        modifier = Modifier.size(48.dp)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onNavigateToEnrollment)
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        Text(
+                            text = "Add custom sound",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Primary,
+                            modifier = Modifier.weight(1f)
+                        )
                         Icon(
-                            imageVector = Icons.Rounded.Delete,
-                            contentDescription = "Delete ${prototype.name}",
-                            tint = TextSecondary
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
-                OwlenRowDivider()
             }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onNavigateToEnrollment)
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Add custom sound",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Primary,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = null,
-                    tint = Primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-        }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        FadeSlideIn(delayMillis = 290) {
+            Column {
+                SettingsSection("System")
+                OwlenCard(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    contentPadding = 0.dp
+                ) {
+                    SettingsNavRow(
+                        label = "Battery Optimisation",
+                        value = if (batteryOptimisationAllowed) "Allowed" else "Restricted",
+                        icon = Icons.Rounded.BatteryFull,
+                        onClick = onBatteryOptimisationClick
+                    )
+                    OwlenRowDivider()
+                    SettingsNavRow(
+                        label = "About Owlen",
+                        value = "v$appVersion",
+                        icon = Icons.Rounded.Info,
+                        onClick = onNavigateToAbout
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 
     prototypePendingDelete?.let { prototype ->
@@ -331,10 +318,10 @@ fun SettingsScreen(
     when (openDialog) {
         SettingsDialog.SOUND -> OptionPickerDialog(
             title = "Protection Sound",
-            options = MaskingSound.values().map { it.displayName },
-            selectedIndex = MaskingSound.values().indexOf(preferredSound),
+            options = MaskingSound.entries.map { it.displayName },
+            selectedIndex = MaskingSound.entries.indexOf(preferredSound),
             onSelect = { index ->
-                onSoundSelected(MaskingSound.values()[index])
+                onSoundSelected(MaskingSound.entries[index])
                 openDialog = SettingsDialog.NONE
             },
             onDismiss = { openDialog = SettingsDialog.NONE }
@@ -342,12 +329,12 @@ fun SettingsScreen(
 
         SettingsDialog.SENSITIVITY -> OptionPickerDialog(
             title = "Sensitivity",
-            options = Sensitivity.values().map {
+            options = Sensitivity.entries.map {
                 it.name.lowercase().replaceFirstChar { c -> c.uppercase() }
             },
-            selectedIndex = Sensitivity.values().indexOf(sensitivity),
+            selectedIndex = Sensitivity.entries.indexOf(sensitivity),
             onSelect = { index ->
-                onSensitivitySelected(Sensitivity.values()[index])
+                onSensitivitySelected(Sensitivity.entries[index])
                 openDialog = SettingsDialog.NONE
             },
             onDismiss = { openDialog = SettingsDialog.NONE }
@@ -397,13 +384,23 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsRow(
+private fun SettingsSection(text: String) {
+    SectionHeader(
+        text = text,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+private fun SettingsNavRow(
     label: String,
     value: String,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
     OwlenRow(
         title = label,
+        leading = { SettingsRowIcon(icon) },
         onClick = onClick,
         trailing = {
             Row(
@@ -423,5 +420,18 @@ private fun SettingsRow(
                 )
             }
         }
+    )
+}
+
+@Composable
+private fun SettingsRowIcon(
+    icon: ImageVector,
+    tint: Color = TextPrimary
+) {
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(20.dp)
     )
 }

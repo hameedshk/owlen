@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 
 class SleepTimerCalculatorTest {
 
-    private val calculator = SleepTimerCalculator()
+    private val calculator = SleepTimerCalculator
 
     @Test
     fun `volumeAt elapsed 0 returns near-silent volume`() {

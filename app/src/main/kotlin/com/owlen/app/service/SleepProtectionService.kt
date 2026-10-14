@@ -318,7 +318,9 @@ class SleepProtectionService : Service() {
                 }
                 audioPlayer.setVolume(vol, targetVolume)
                 val remaining = durationMs - elapsedMs
-                serviceRepository.updateState(ServiceState.TimedPlaybackActive(sound, vol, remaining, durationMs))
+                serviceRepository.updateState(
+                    ServiceState.TimedPlaybackActive(sound, vol, remaining, durationMs, mode)
+                )
 
                 val minute = (remaining / 60_000L).toInt()
                 if (minute != lastNotifiedMinute) {

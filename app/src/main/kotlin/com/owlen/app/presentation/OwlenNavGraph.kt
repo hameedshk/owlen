@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.BatteryManager
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,9 +28,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -68,14 +63,17 @@ import com.owlen.app.presentation.ui.SafetyAlertScreen
 import com.owlen.app.presentation.ui.SessionDetailsScreen
 import com.owlen.app.presentation.ui.SettingsScreen
 import com.owlen.app.presentation.ui.SetupScreen
+import com.owlen.app.presentation.ui.SleepScheduleScreen
 import com.owlen.app.presentation.ui.SleepTimerScreen
 import com.owlen.app.presentation.ui.SplashScreen
 import com.owlen.app.presentation.ui.theme.Background
 import com.owlen.app.presentation.ui.theme.MatteBackground
 import com.owlen.app.presentation.ui.theme.Primary
-import com.owlen.app.presentation.ui.theme.Stroke
+import com.owlen.app.presentation.ui.theme.PrimarySubtle
 import com.owlen.app.presentation.ui.theme.TextSecondary
+import com.owlen.app.presentation.sleeptimer.SleepTimerViewModel
 import com.owlen.app.presentation.util.BatteryOptimization
+import com.owlen.app.presentation.util.ExactAlarmPermission
 import com.owlen.app.service.ServiceState
 
 // Route constants
@@ -87,6 +85,7 @@ private object Routes {
     const val CALIBRATION = "calibration"
     const val HOME = "home"
     const val SLEEP_TIMER = "sleep_timer"
+    const val SLEEP_SCHEDULE = "sleep_schedule"
     const val ACTIVE_MODE = "active_mode"
     const val EVENT_OVERLAY = "event_overlay"
     const val SAFETY_ALERT = "safety_alert"
@@ -151,40 +150,14 @@ fun OwlenNavGraph(
                 NavigationBar(
                     containerColor = Color.Transparent,
                     tonalElevation = 0.dp,
-                    modifier = Modifier
-                        .background(Background)
-                        .drawBehind {
-                            drawLine(
-                                color = Stroke,
-                                start = Offset.Zero,
-                                end = Offset(size.width, 0f),
-                                strokeWidth = 1.dp.toPx()
-                            )
-                        }
+                    modifier = Modifier.background(Background)
                 ) {
                     bottomTabs.forEach { tab ->
                         val selected = navBackStackEntry?.destination?.hierarchy?.any {
                             it.route == tab.route
                         } == true
 
-                        // Amber indicator bar along the top edge of the active tab
-                        val indicatorAlpha by animateFloatAsState(
-                            targetValue = if (selected) 1f else 0f,
-                            animationSpec = tween(200),
-                            label = "navIndicator"
-                        )
-
                         NavigationBarItem(
-                            modifier = Modifier.drawBehind {
-                                if (indicatorAlpha > 0f) {
-                                    val barWidth = size.width * 0.5f
-                                    drawRect(
-                                        color = Primary.copy(alpha = indicatorAlpha),
-                                        topLeft = Offset((size.width - barWidth) / 2f, 0f),
-                                        size = Size(barWidth, 2.dp.toPx())
-                                    )
-                                }
-                            },
                             selected = selected,
                             onClick = {
                                 // Tabs are single screens — no per-tab stack to save/restore.
@@ -203,16 +176,18 @@ fun OwlenNavGraph(
                             },
                             label = {
                                 Text(
-                                    text = tab.label.uppercase(),
-                                    style = MaterialTheme.typography.labelSmall
+                                    text = tab.label,
+                                    style = MaterialTheme.typography.labelMedium
                                 )
                             },
+                            // Soft amber pill behind the active tab, in place of
+                            // the old hard-edged 2dp indicator bar
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = Primary,
                                 selectedTextColor = Primary,
                                 unselectedIconColor = TextSecondary,
                                 unselectedTextColor = TextSecondary,
-                                indicatorColor = Color.Transparent
+                                indicatorColor = PrimarySubtle
                             )
                         )
                     }
@@ -366,7 +341,38 @@ fun OwlenNavGraph(
             }
 
             composable(Routes.SLEEP_TIMER) {
-                SleepTimerScreen()
+                SleepTimerScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.SLEEP_SCHEDULE) {
+                val sleepTimerViewModel: SleepTimerViewModel = hiltViewModel()
+                val schedule by sleepTimerViewModel.schedule.collectAsState()
+                val exactAlarmAllowed by sleepTimerViewModel.hasExactAlarmPermission.collectAsState()
+                val lifecycleOwner = LocalLifecycleOwner.current
+
+                // Exact-alarm access is revocable, so re-check on return from settings
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            sleepTimerViewModel.refreshExactAlarmPermission()
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                }
+
+                SleepScheduleScreen(
+                    schedule = schedule,
+                    hasExactAlarmPermission = exactAlarmAllowed,
+                    onSave = { updated ->
+                        sleepTimerViewModel.saveSchedule(updated)
+                        navController.popBackStack()
+                    },
+                    onRequestExactAlarmPermission = {
+                        ExactAlarmPermission.request(context)
+                    },
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
             composable(Routes.ACTIVE_MODE) {
@@ -492,6 +498,7 @@ fun OwlenNavGraph(
                 }
 
                 val customPrototypes by settingsViewModel.customPrototypes.collectAsState()
+                val schedule by settingsViewModel.schedule.collectAsState()
 
                 SettingsScreen(
                     sleepHour = settings.sleepWindowStartHour,
@@ -503,10 +510,12 @@ fun OwlenNavGraph(
                     rainBehaviourEnabled = settings.rainBehaviourEnabled,
                     soundLevelFloorDb = settings.soundLevelFloor.toInt(),
                     batteryOptimisationAllowed = batteryExempt,
+                    schedule = schedule,
                     customPrototypes = customPrototypes,
                     onNavigateToEnrollment = { navController.navigate(Routes.ENROLLMENT) },
                     onDeletePrototype = { settingsViewModel.deletePrototype(it) },
-                    onNavigateToSleepSchedule = { navController.navigate(Routes.SETUP) },
+                    onNavigateToSleepSchedule = { navController.navigate(Routes.SLEEP_SCHEDULE) },
+                    onNavigateToSleepWindow = { navController.navigate(Routes.SETUP) },
                     onNavigateToSleepTimer = { navController.navigate(Routes.SLEEP_TIMER) },
                     onSoundSelected = { settingsViewModel.updatePreferredSound(it) },
                     onMaxVolumeChanged = { settingsViewModel.updateMaxVolume(it / 100f) },

@@ -21,6 +21,8 @@ sealed class ServiceState {
         val sound: MaskingSound,
         val volume: Float,
         val remainingMs: Long,
-        val totalDurationMs: Long
+        val totalDurationMs: Long,
+        /** Which flow started this playback — the UI shows a preview very differently to a timer. */
+        val mode: SleepProtectionService.PlaybackMode = SleepProtectionService.PlaybackMode.TIMER
     ) : ServiceState()
 }
