@@ -122,6 +122,34 @@ to disturb sleep. It does NOT play continuously.
 
 
 
+## On-Device Debugging — Read Before Changing UI Code
+
+Test device: Samsung SM-A736B, Android 15, 1080×2400, ADB over Wi-Fi.
+
+- NEVER tap coordinates read off a screenshot — screenshots are downscaled
+  900×2000 from a 1080×2400 panel (0.833×). Always take coordinates from
+  `uiautomator dump` bounds. If you must use an image, multiply by 1.20.
+
+- Taps that silently do nothing low on the screen while the big centre button
+  still works = scaled coordinates, NOT a touch bug. The error grows with the
+  coordinate, so bottom-nav targets miss first.
+
+- Before blaming the app, run `adb shell dumpsys input`. If the app window has
+  `inputConfig=0x0`, a full `touchableRegion`, and `status=NORMAL,
+  responsive=true`, injection works and your coordinates are wrong.
+
+- `[Gesture Monitor] secinputdev` and `PalmMotion` are normal Samsung SPY
+  monitors. They do NOT block input.
+
+- Compose puts the click handler on a parent View; the label is a
+  `clickable="false"` leaf. Walk up to the nearest `clickable="true"` ancestor.
+
+- Verify every tap by asserting the screen content actually changed.
+
+Full procedure + reusable helper: docs/On_Device_Debugging.md
+
+
+
 ## Reference Documents
 
 - BRD v2: docs/BRD_v2.docx
@@ -131,3 +159,5 @@ to disturb sleep. It does NOT play continuously.
 - UX Spec: docs/UX_Spec_v2.md
 
 - Test Plan: docs/Test_Plan_v1.md
+
+- On-Device Debugging: docs/On_Device_Debugging.md
