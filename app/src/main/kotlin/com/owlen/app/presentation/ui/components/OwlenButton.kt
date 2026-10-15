@@ -28,7 +28,7 @@ enum class OwlenButtonVariant { Primary, Secondary, Danger, Success }
 
 /**
  * Flat Owlen CTA: soft 28dp pill, 56dp tall, optional leading icon.
- * Label is NOT uppercased (unlike the old NeoPop button).
+ * Label is rendered as given — never uppercased.
  */
 @Composable
 fun OwlenButton(
@@ -54,7 +54,7 @@ fun OwlenButton(
                 shape = RoundedCornerShape(28.dp)
             )
             .then(
-                if (enabled && onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+                if (enabled) Modifier.clickable(onClick = onClick) else Modifier
             )
             .padding(horizontal = 24.dp),
         verticalAlignment = Alignment.CenterVertically,

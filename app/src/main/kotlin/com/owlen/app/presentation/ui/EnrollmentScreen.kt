@@ -19,7 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.owlen.app.presentation.enrollment.EnrollmentViewModel.Phase
@@ -30,7 +30,7 @@ import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.ui.theme.owlenCard
 
 private const val TAKES_REQUIRED = 3
 
@@ -92,7 +92,7 @@ fun EnrollmentScreen(
                 Box(
                     modifier = Modifier
                         .size(72.dp)
-                        .neoPopCard(fill = Green.copy(alpha = 0.15f), stroke = Green),
+                        .owlenCard(fill = Green.copy(alpha = 0.15f), shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(text = "✓", style = MaterialTheme.typography.titleLarge, color = Green)
@@ -155,7 +155,7 @@ fun EnrollmentScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Take progress — hard squares
+                // Take progress — soft dots
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     repeat(TAKES_REQUIRED) { index ->
                         Box(
@@ -163,7 +163,7 @@ fun EnrollmentScreen(
                                 .size(12.dp)
                                 .background(
                                     if (index < takesCompleted) Green else Stroke,
-                                    RectangleShape
+                                    CircleShape
                                 )
                         )
                     }

@@ -67,7 +67,7 @@ import com.owlen.app.presentation.ui.SleepScheduleScreen
 import com.owlen.app.presentation.ui.SleepTimerScreen
 import com.owlen.app.presentation.ui.SplashScreen
 import com.owlen.app.presentation.ui.theme.Background
-import com.owlen.app.presentation.ui.theme.MatteBackground
+import com.owlen.app.presentation.ui.components.OwlenBackground
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.PrimarySubtle
 import com.owlen.app.presentation.ui.theme.TextSecondary
@@ -141,8 +141,7 @@ fun OwlenNavGraph(
         }
     }
 
-    // No grid texture during overnight monitoring — keep the panel truly black
-    MatteBackground(showGrid = currentRoute != Routes.ACTIVE_MODE) {
+    OwlenBackground {
         Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {

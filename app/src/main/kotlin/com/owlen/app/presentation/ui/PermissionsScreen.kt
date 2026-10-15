@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Mic
@@ -49,7 +49,7 @@ import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.ui.theme.owlenCard
 
 @Composable
 fun PermissionsScreen(
@@ -95,7 +95,7 @@ fun PermissionsScreen(
         ) {
             IconButton(onClick = onNavigateBack, modifier = Modifier.size(48.dp)) {
                 Icon(
-                    imageVector = Icons.Rounded.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = "Back",
                     tint = TextPrimary
                 )
@@ -206,7 +206,7 @@ private fun PermissionRow(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .neoPopCard()
+            .owlenCard()
             .clickable(onClick = onClick)
             .padding(16.dp)
     ) {

@@ -1,6 +1,7 @@
 package com.owlen.app.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BabyChangingStation
 import androidx.compose.material.icons.rounded.NotificationImportant
@@ -23,12 +25,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.owlen.app.domain.model.EventClass
-import com.owlen.app.presentation.ui.theme.NeoPopPlate
+import com.owlen.app.presentation.ui.theme.OwlenRadius
 import com.owlen.app.presentation.ui.theme.Safety
 import com.owlen.app.presentation.ui.theme.SafetyDim
-import com.owlen.app.presentation.ui.theme.SafetyEdge
-import com.owlen.app.presentation.ui.theme.SafetyEdgeDeep
 import com.owlen.app.presentation.ui.theme.TextPrimary
+import com.owlen.app.presentation.ui.theme.owlenCard
 
 @Composable
 fun SafetyAlertScreen(
@@ -78,19 +79,20 @@ fun SafetyAlertScreen(
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            NeoPopPlate(
-                onClick = onDismiss,
+            // White pill on red: maximum contrast, reachable half-asleep
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
-                faceColor = Color.White,
-                edgeRight = SafetyEdge,
-                edgeBottom = SafetyEdgeDeep,
-                strokeColor = Safety,
-                depth = 6.dp
+                    .height(64.dp)
+                    .owlenCard(
+                        fill = Color.White,
+                        shape = RoundedCornerShape(OwlenRadius.pill)
+                    )
+                    .clickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "DISMISS",
+                    text = "Dismiss",
                     style = MaterialTheme.typography.labelLarge,
                     color = Safety
                 )

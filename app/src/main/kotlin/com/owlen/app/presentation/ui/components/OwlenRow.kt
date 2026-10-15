@@ -14,13 +14,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 
 /**
  * Shared list row: title/subtitle with optional leading, value, and trailing slots.
- * Inset divider at 56dp (clears the leading icon).
+ * A [selected] row tints its title amber — the rounded-design stand-in for the
+ * old hard stroke and accent bar. Inset divider at 56dp (clears the leading icon).
  */
 @Composable
 fun OwlenRow(
@@ -50,7 +52,7 @@ fun OwlenRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = TextPrimary
+                color = if (selected) Primary else TextPrimary
             )
             if (subtitle != null) {
                 Text(

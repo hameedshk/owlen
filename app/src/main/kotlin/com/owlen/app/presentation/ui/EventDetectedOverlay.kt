@@ -33,14 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.domain.model.EventClass
 import com.owlen.app.domain.model.MaskingSound
+import com.owlen.app.presentation.ui.theme.OwlenRadius
 import com.owlen.app.presentation.ui.theme.Primary
-import com.owlen.app.presentation.ui.theme.StrokeBright
 import com.owlen.app.presentation.ui.theme.SurfaceCard
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
@@ -91,15 +90,14 @@ fun EventDetectedOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SurfaceCard, RectangleShape)
-                    .drawBehind {
-                        // StrokeBright top border
-                        drawLine(
-                            color = StrokeBright,
-                            start = Offset(0f, 0f),
-                            end = Offset(size.width, 0f),
-                            strokeWidth = 1.dp.toPx()
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = OwlenRadius.card,
+                            topEnd = OwlenRadius.card
                         )
+                    )
+                    .background(SurfaceCard)
+                    .drawBehind {
                         // Amber left accent 4dp
                         drawLine(
                             color = Primary,

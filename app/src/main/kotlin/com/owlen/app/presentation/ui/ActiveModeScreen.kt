@@ -10,6 +10,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Icon
@@ -38,10 +41,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,14 +52,14 @@ import androidx.compose.ui.unit.sp
 import com.owlen.app.presentation.ui.theme.Background
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.GreenDim
+import com.owlen.app.presentation.ui.theme.OwlenRadius
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.PrimaryDim
 import com.owlen.app.presentation.ui.theme.SurfaceSunken
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
-import com.owlen.app.presentation.ui.theme.cornerTicks
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.ui.theme.owlenCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -216,11 +219,12 @@ private fun ActiveModeContent(
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
-        // Square shield plate with pulsing green stroke (no scale, no glow)
+        // Circular shield badge with pulsing green ring (no scale, no glow)
         Box(
             modifier = Modifier
                 .size(96.dp)
-                .neoPopCard(fill = Green.copy(alpha = 0.12f), stroke = Green.copy(alpha = strokeAlpha)),
+                .owlenCard(fill = Green.copy(alpha = 0.12f), shape = CircleShape)
+                .border(1.dp, Green.copy(alpha = strokeAlpha), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -253,7 +257,7 @@ private fun ActiveModeContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .neoPopCard()
+                .owlenCard()
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -272,8 +276,7 @@ private fun ActiveModeContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .cornerTicks()
-                .neoPopCard()
+                .owlenCard()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -334,7 +337,7 @@ private fun ActiveModeContent(
     }
 }
 
-/** Hard amber bars signalling live listening. */
+/** Soft amber bars signalling live listening. */
 @Composable
 private fun EqualizerBars(
     color: Color,
@@ -363,7 +366,7 @@ private fun EqualizerBars(
                 modifier = Modifier
                     .width(3.dp)
                     .fillMaxHeight(level.value)
-                    .background(color, RectangleShape)
+                    .background(color, CircleShape)
             )
         }
     }
@@ -382,10 +385,13 @@ private fun HoldToStopButton(
     val scope = rememberCoroutineScope()
     var holding by remember { mutableStateOf(false) }
 
+    val pillShape = RoundedCornerShape(OwlenRadius.pill)
+
     Box(
         modifier = modifier
             .height(64.dp)
-            .neoPopCard(fill = SurfaceSunken, stroke = Primary)
+            .owlenCard(fill = SurfaceSunken, shape = pillShape)
+            .border(1.dp, Primary, pillShape)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -412,6 +418,7 @@ private fun HoldToStopButton(
         Box(
             modifier = Modifier
                 .matchParentSize()
+                .clip(pillShape)
                 .drawBehind {
                     drawRect(
                         color = Primary.copy(alpha = 0.30f),
@@ -420,7 +427,7 @@ private fun HoldToStopButton(
                 }
         )
         Text(
-            text = if (holding) "KEEP HOLDING…" else "HOLD TO STOP",
+            text = if (holding) "Keep holding…" else "Hold to stop",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = Primary

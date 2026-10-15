@@ -10,16 +10,6 @@ val SurfaceSunken = Color(0xFF14161F)    // inset wells (dialog inner areas)
 val Stroke = Color(0xFF262A38)           // soft divider
 val StrokeBright = Color(0x1FFFFFFF)     // soft emphasis
 val Hairline = Color(0x14FFFFFF)         // grouped card divider
-val DotGrid = Color(0x0DFFFFFF)
-
-// 3D edge colors (deprecated — to be deleted in Phase 2 after component rename)
-val PrimaryEdge = Color(0xFF9C6A12)
-val PrimaryEdgeDeep = Color(0xFF6E4A0C)
-val GreenEdge = Color(0xFF2E6B32)
-val GreenEdgeDeep = Color(0xFF1F4A22)
-val SafetyEdge = Color(0xFF9E2F2F)
-val SafetyEdgeDeep = Color(0xFF6E1F1F)
-val NeutralEdge = Color(0xFF060608)
 
 val Surface = SurfaceCard
 val SurfaceVar = SurfaceSunken

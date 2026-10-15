@@ -25,8 +25,7 @@ import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
-import com.owlen.app.presentation.ui.theme.cornerTicks
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.ui.theme.owlenCard
 
 @Composable
 fun MorningSummaryScreen(
@@ -99,7 +98,7 @@ fun MorningSummaryScreen(
 
         FadeSlideIn(delayMillis = 200) {
         // Summary card
-        Column(modifier = Modifier.fillMaxWidth().cornerTicks().neoPopCard()) {
+        Column(modifier = Modifier.fillMaxWidth().owlenCard()) {
 
             if (quietNight) {
                 Box(
@@ -189,7 +188,7 @@ fun MorningSummaryScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .neoPopCard(tint = Warning.copy(alpha = 0.10f))
+                    .owlenCard(tint = Warning.copy(alpha = 0.10f))
                     .padding(16.dp)
             ) {
                 Text(

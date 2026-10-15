@@ -4,11 +4,14 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -41,11 +45,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke as StrokeStyle
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,24 +61,21 @@ import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
 import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
-import com.owlen.app.presentation.ui.theme.GreenEdge
-import com.owlen.app.presentation.ui.theme.GreenEdgeDeep
-import com.owlen.app.presentation.ui.theme.NeoPopPlate
-import com.owlen.app.presentation.ui.theme.NeutralEdge
 import com.owlen.app.presentation.ui.theme.OnPrimary
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
-import com.owlen.app.presentation.ui.theme.StrokeBright
 import com.owlen.app.presentation.ui.theme.SurfaceCard
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import com.owlen.app.presentation.ui.theme.Warning
-import com.owlen.app.presentation.ui.theme.cornerTicks
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.ui.theme.owlenCard
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+/** Hero plate corner — deliberately larger than OwlenRadius.card so it reads as a marquee element. */
+private val HERO_CORNER = 32.dp
 
 @Composable
 fun HomeScreen(
@@ -175,7 +179,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .neoPopCard(tint = Warning.copy(alpha = 0.08f))
+                        .owlenCard(tint = Warning.copy(alpha = 0.08f))
                         .clickable(onClick = onInterruptionClick)
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -210,7 +214,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Hero: 160dp square NeoPop plate with 10dp depth.
+            // Hero: 160dp rounded power plate.
             // Activation flash: a green frame blooms outward once when
             // protection starts, so flipping it on feels like an event.
             val activationFlash = remember { Animatable(0f) }
@@ -221,30 +225,51 @@ fun HomeScreen(
                 }
             }
 
-            NeoPopPlate(
-                onClick = { onProtectionToggle(!isProtectionActive) },
+            // Flat design has no plunk to press, so the plate dips slightly instead.
+            // The haptic tick carries over from the old plate — it's how the CTA feels.
+            val heroInteraction = remember { MutableInteractionSource() }
+            val heroPressed by heroInteraction.collectIsPressedAsState()
+            val heroPress by animateFloatAsState(
+                targetValue = if (heroPressed) 0.96f else 1f,
+                animationSpec = tween(durationMillis = 90, easing = FastOutSlowInEasing),
+                label = "heroPress"
+            )
+            val haptics = LocalHapticFeedback.current
+            LaunchedEffect(heroPressed) {
+                if (heroPressed) {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
+            }
+
+            Box(
                 modifier = Modifier
                     .padding(vertical = 36.dp)
                     .size(160.dp)
-                    .then(if (isProtectionActive) Modifier.scale(pulseScale) else Modifier)
+                    .scale(if (isProtectionActive) pulseScale * heroPress else heroPress)
                     .drawBehind {
                         val flash = activationFlash.value
                         if (flash > 0f) {
                             val inflate = 10.dp.toPx() * (1f - flash)
-                            drawRect(
+                            val radius = HERO_CORNER.toPx() + inflate
+                            drawRoundRect(
                                 color = Green.copy(alpha = flash * 0.8f),
                                 topLeft = Offset(-inflate, -inflate),
                                 size = Size(size.width + inflate * 2, size.height + inflate * 2),
+                                cornerRadius = CornerRadius(radius, radius),
                                 style = StrokeStyle(width = 2.dp.toPx())
                             )
                         }
-                    },
-                faceColor = if (isProtectionActive) Green else SurfaceCard,
-                edgeRight = if (isProtectionActive) GreenEdge else NeutralEdge,
-                edgeBottom = if (isProtectionActive) GreenEdgeDeep else NeutralEdge,
-                strokeColor = if (isProtectionActive) Green else StrokeBright,
-                depth = 10.dp,
-                shimmer = !isProtectionActive
+                    }
+                    .owlenCard(
+                        fill = if (isProtectionActive) Green else SurfaceCard,
+                        shape = RoundedCornerShape(HERO_CORNER)
+                    )
+                    .clickable(
+                        interactionSource = heroInteraction,
+                        indication = null,
+                        onClick = { onProtectionToggle(!isProtectionActive) }
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
@@ -277,8 +302,7 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .cornerTicks()
-                        .neoPopCard()
+                        .owlenCard()
                         .padding(vertical = 20.dp, horizontal = 24.dp)
                 ) {
                     Row(
@@ -363,7 +387,7 @@ private fun ScheduleTimeItem(
     }
 }
 
-/** CRED-style stat chip: tiny uppercase overline label above the value. */
+/** Stat chip: tiny uppercase overline label above the value. */
 @Composable
 private fun QuickInfoChip(
     icon: ImageVector,
@@ -374,7 +398,7 @@ private fun QuickInfoChip(
 ) {
     Row(
         modifier = modifier
-            .neoPopCard()
+            .owlenCard()
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically

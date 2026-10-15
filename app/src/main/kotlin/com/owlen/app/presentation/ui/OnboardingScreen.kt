@@ -29,7 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,7 +39,7 @@ import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.TextDisabled
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.ui.theme.owlenCard
 import kotlinx.coroutines.launch
 
 private data class OnboardingPage(
@@ -105,7 +105,7 @@ fun OnboardingScreen(
                             .width(dotWidth)
                             .background(
                                 color = if (selected) Primary else TextDisabled,
-                                shape = RectangleShape
+                                shape = CircleShape
                             )
                     )
                 }
@@ -170,7 +170,7 @@ private fun OnboardingPage(page: OnboardingPage) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .neoPopCard()
+                    .owlenCard()
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {

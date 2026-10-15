@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.R
-import com.owlen.app.presentation.ui.theme.MatteBackground
+import com.owlen.app.presentation.ui.components.OwlenBackground
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
 import kotlinx.coroutines.delay
@@ -65,7 +65,7 @@ fun SplashScreen(
         label = "wordmarkTracking"
     )
 
-    MatteBackground {
+    OwlenBackground {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)

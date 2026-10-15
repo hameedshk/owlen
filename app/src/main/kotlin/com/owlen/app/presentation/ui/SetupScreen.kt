@@ -21,7 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -39,7 +39,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -58,10 +57,9 @@ import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
-import com.owlen.app.presentation.ui.theme.SurfaceSunken
 import com.owlen.app.presentation.ui.theme.TextPrimary
 import com.owlen.app.presentation.ui.theme.TextSecondary
-import com.owlen.app.presentation.ui.theme.neoPopCard
+import com.owlen.app.presentation.ui.theme.owlenCard
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
@@ -90,7 +88,7 @@ fun SetupScreen(
         ) {
             IconButton(onClick = onNavigateBack, modifier = Modifier.size(48.dp)) {
                 Icon(
-                    imageVector = Icons.Rounded.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = "Back",
                     tint = TextPrimary
                 )
@@ -172,7 +170,7 @@ fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
+                    Column(modifier = Modifier.fillMaxWidth().owlenCard()) {
                         MaskingSound.entries.forEachIndexed { index, sound ->
                             OwlenRow(
                                 title = sound.displayName,
@@ -200,7 +198,7 @@ fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Column(modifier = Modifier.fillMaxWidth().neoPopCard()) {
+                    Column(modifier = Modifier.fillMaxWidth().owlenCard()) {
                         Sensitivity.entries.forEachIndexed { index, sensitivity ->
                             OwlenRow(
                                 title = sensitivity.name.lowercase().replaceFirstChar { it.uppercase() },

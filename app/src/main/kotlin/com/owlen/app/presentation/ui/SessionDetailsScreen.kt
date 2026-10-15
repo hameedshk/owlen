@@ -15,12 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owlen.app.domain.model.EventClass
 import com.owlen.app.domain.model.MaskingSound
+import com.owlen.app.presentation.ui.components.OwlenScreenHeader
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.Stroke
 import com.owlen.app.presentation.ui.theme.Primary
@@ -62,37 +58,11 @@ fun SessionDetailsScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Top bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.ArrowBack,
-                    contentDescription = "Back",
-                    tint = TextPrimary
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(
-                    text = "HISTORY",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextSecondary
-                )
-                Text(
-                    text = "Session Details",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = TextPrimary
-                )
-            }
-        }
+        OwlenScreenHeader(
+            title = "Session Details",
+            overline = "History",
+            onNavigateBack = onNavigateBack
+        )
 
         if (events.isEmpty()) {
             Box(
@@ -208,7 +178,7 @@ private fun SessionEventRow(event: SessionEventItem) {
                         modifier = Modifier
                             .width(60.dp)
                             .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
+                            .clip(CircleShape),
                         color = Primary,
                         trackColor = Primary.copy(alpha = 0.2f)
                     )
