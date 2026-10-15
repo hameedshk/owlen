@@ -4,6 +4,13 @@ object SleepTimerCalculator {
     const val NEAR_SILENT_VOLUME = 0.02f
 
     /**
+     * Where a ramp begins. Normally the near-silent floor, but a target below that
+     * floor (the volume slider reaches 0%) has to cap it — otherwise the ramp would
+     * open louder than the volume the user actually asked for.
+     */
+    fun rampFloor(targetVolume: Float): Float = minOf(NEAR_SILENT_VOLUME, targetVolume)
+
+    /**
      * Timer fade-out: hold at target volume, then ramp down to silence over the final fadeOutMs.
      * Used for "play now" timer mode.
      */
@@ -12,8 +19,9 @@ object SleepTimerCalculator {
         val remaining = durationMs - elapsedMs
         if (remaining <= 0L) return 0f
         if (fadeOutMs <= 0L || remaining >= fadeOutMs) return targetVolume
+        val floor = rampFloor(targetVolume)
         val t = remaining.toFloat() / fadeOutMs.toFloat()
-        return NEAR_SILENT_VOLUME + (targetVolume - NEAR_SILENT_VOLUME) * t
+        return floor + (targetVolume - floor) * t
     }
 
     /**
@@ -22,8 +30,9 @@ object SleepTimerCalculator {
      */
     fun fadeInVolume(elapsedMs: Long, fadeInMs: Long, targetVolume: Float): Float {
         if (fadeInMs <= 0L) return targetVolume
+        val floor = rampFloor(targetVolume)
         val t = (elapsedMs.toFloat() / fadeInMs.toFloat()).coerceIn(0f, 1f)
-        return NEAR_SILENT_VOLUME + (targetVolume - NEAR_SILENT_VOLUME) * t
+        return floor + (targetVolume - floor) * t
     }
 
     /**
@@ -32,7 +41,8 @@ object SleepTimerCalculator {
      */
     fun volumeAt(elapsedMs: Long, durationMs: Long, targetVolume: Float): Float {
         if (durationMs <= 0L) return targetVolume
+        val floor = rampFloor(targetVolume)
         val t = (elapsedMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
-        return NEAR_SILENT_VOLUME + (targetVolume - NEAR_SILENT_VOLUME) * t
+        return floor + (targetVolume - floor) * t
     }
 }

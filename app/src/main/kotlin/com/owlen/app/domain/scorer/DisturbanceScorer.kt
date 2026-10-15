@@ -95,7 +95,9 @@ class DisturbanceScorer {
         EventClass.BABY_CRY -> 100
         EventClass.SMOKE_ALARM -> 100
         EventClass.CUSTOM -> 75
-        EventClass.UNKNOWN -> 15
+        // BRD FR-4: conservative cap, deliberately high enough to cover snoring
+        // misclassified as Unknown. Do not lower without revising that risk.
+        EventClass.UNKNOWN -> 40
     }
 
     private fun calculateNormSoundLevel(dBSPL: Float, floor: Float): Int {

@@ -73,36 +73,56 @@ class SleepTimerScheduler(private val context: Context) {
     companion object {
         fun computeNextTriggerTime(schedule: SleepTimerSchedule, nowMs: Long): Long {
             val now = Calendar.getInstance().apply { timeInMillis = nowMs }
-            val startCal = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, schedule.startHour)
-                set(Calendar.MINUTE, schedule.startMinute)
-                set(Calendar.SECOND, 0)
-            }
-            val endCal = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, schedule.endHour)
-                set(Calendar.MINUTE, schedule.endMinute)
-                set(Calendar.SECOND, 0)
+            val wrapsMidnight = wrapsMidnight(schedule)
+
+            val startCal = dayOf(nowMs, schedule.startHour, schedule.startMinute)
+            val endCal = dayOf(nowMs, schedule.endHour, schedule.endMinute).apply {
+                if (wrapsMidnight) add(Calendar.DAY_OF_MONTH, 1)
             }
 
-            // Handle midnight-crossing window
-            if (schedule.endHour < schedule.startHour) {
-                endCal.add(Calendar.DAY_OF_MONTH, 1)
+            // A window that crosses midnight may have opened yesterday and still be
+            // running: between midnight and the end time, today's start is hours away
+            // yet playback is already due.
+            if (wrapsMidnight) {
+                val yesterdayStart = (startCal.clone() as Calendar)
+                    .apply { add(Calendar.DAY_OF_MONTH, -1) }
+                val yesterdayEnd = (endCal.clone() as Calendar)
+                    .apply { add(Calendar.DAY_OF_MONTH, -1) }
+                if (isInsideWindow(now, yesterdayStart, yesterdayEnd)) {
+                    return nowMs
+                }
             }
 
-            // If now is inside [start, end), start immediately
+            // Inside today's window → start immediately
             if (isInsideWindow(now, startCal, endCal)) {
                 return nowMs
             }
 
-            // If now < today's start, schedule for today's start
+            // Today's start still ahead → wait for it
             if (now.before(startCal)) {
                 return startCal.timeInMillis
             }
 
-            // Otherwise schedule for tomorrow's start
+            // Today's start already passed → tomorrow
             startCal.add(Calendar.DAY_OF_MONTH, 1)
             return startCal.timeInMillis
         }
+
+        /** True when the end time is at or before the start time, e.g. 23:30 → 06:15. */
+        private fun wrapsMidnight(schedule: SleepTimerSchedule): Boolean {
+            val start = schedule.startHour * 60 + schedule.startMinute
+            val end = schedule.endHour * 60 + schedule.endMinute
+            return end <= start
+        }
+
+        private fun dayOf(baseMs: Long, hour: Int, minute: Int): Calendar =
+            Calendar.getInstance().apply {
+                timeInMillis = baseMs
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
 
         private fun isInsideWindow(now: Calendar, start: Calendar, end: Calendar): Boolean {
             return !now.before(start) && now.before(end)

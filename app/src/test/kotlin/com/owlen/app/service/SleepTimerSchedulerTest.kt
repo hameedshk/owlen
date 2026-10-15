@@ -100,8 +100,9 @@ class SleepTimerSchedulerTest {
     }
 
     @Test
-    fun `computeNextTriggerTime midnight-crossing after window schedules for tomorrow`() {
-        // 11 PM - 1 AM schedule, queried at 2 AM (past window)
+    fun `computeNextTriggerTime midnight-crossing after window schedules for tonight`() {
+        // 11 PM - 1 AM schedule, queried at 2 AM: last night's window has closed,
+        // but tonight's 11 PM start is still ahead — it must not skip a night.
         val now = createCalendar(2, 0)
         val schedule = SleepTimerSchedule(
             enabled = true,
@@ -117,10 +118,48 @@ class SleepTimerSchedulerTest {
 
         assertEquals(23, hour)
         assertEquals(0, minute)
-        // Verify it's tomorrow
+        // Same calendar day — tonight, not tomorrow night
         val nowCal = Calendar.getInstance().apply { timeInMillis = now }
         val triggerCal = Calendar.getInstance().apply { timeInMillis = trigger }
-        assertEquals(1, triggerCal.get(Calendar.DAY_OF_MONTH) - nowCal.get(Calendar.DAY_OF_MONTH))
+        assertEquals(0, triggerCal.get(Calendar.DAY_OF_MONTH) - nowCal.get(Calendar.DAY_OF_MONTH))
+    }
+
+    @Test
+    fun `computeNextTriggerTime midnight-crossing past midnight starts immediately`() {
+        // 11 PM - 1 AM schedule, queried at 12:30 AM: the window opened last night
+        // and is still open, so playback is already due.
+        val now = createCalendar(0, 30)
+        val schedule = SleepTimerSchedule(
+            enabled = true,
+            startHour = 23,
+            startMinute = 0,
+            endHour = 1,
+            endMinute = 0,
+            sound = MaskingSound.WHITE_NOISE
+        )
+
+        val trigger = SleepTimerScheduler.computeNextTriggerTime(schedule, now)
+
+        assertEquals(now, trigger)
+    }
+
+    @Test
+    fun `computeNextTriggerTime treats equal-minute wrap as midnight-crossing`() {
+        // 23:30 - 23:00 differs only by minute, so it still wraps; at 23:45 the
+        // window is open and playback is due.
+        val now = createCalendar(23, 45)
+        val schedule = SleepTimerSchedule(
+            enabled = true,
+            startHour = 23,
+            startMinute = 30,
+            endHour = 23,
+            endMinute = 0,
+            sound = MaskingSound.RAIN
+        )
+
+        val trigger = SleepTimerScheduler.computeNextTriggerTime(schedule, now)
+
+        assertEquals(now, trigger)
     }
 
     @Test

@@ -302,7 +302,11 @@ class SleepProtectionService : Service() {
     ) {
         if (timedPlaybackJob?.isActive == true) timedPlaybackJob?.cancel()
         timedPlaybackJob = serviceScope.launch {
-            audioPlayer.startMaskingAtVolume(sound, SleepTimerCalculator.NEAR_SILENT_VOLUME, targetVolume)
+            audioPlayer.startMaskingAtVolume(
+                sound,
+                SleepTimerCalculator.rampFloor(targetVolume),
+                targetVolume
+            )
             val tickMs = 1_000L
             val rampStartTimeMs = System.currentTimeMillis()
             var lastNotifiedMinute = -1
