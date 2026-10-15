@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DarkMode
@@ -57,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.owlen.app.R
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.Sensitivity
+import com.owlen.app.presentation.ui.theme.FadeSlideIn
 import com.owlen.app.presentation.ui.theme.Green
 import com.owlen.app.presentation.ui.theme.OnPrimary
 import com.owlen.app.presentation.ui.theme.Primary
@@ -121,7 +124,9 @@ fun HomeScreen(
     )
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
         Row(
             modifier = Modifier
@@ -149,18 +154,20 @@ fun HomeScreen(
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = greeting.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextSecondary
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Let's keep tonight quiet.",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = TextPrimary
-                )
+            FadeSlideIn {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = greeting.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Let's keep tonight quiet.",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = TextPrimary
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -291,57 +298,61 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .owlenCard()
-                    .padding(vertical = 20.dp, horizontal = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+            FadeSlideIn(delayMillis = 150) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .owlenCard()
+                        .padding(vertical = 20.dp, horizontal = 24.dp)
                 ) {
-                    ScheduleTimeItem(
-                        icon = Icons.Rounded.DarkMode,
-                        label = "Sleep",
-                        time = sleepTimeDisplay
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(48.dp)
-                            .background(Stroke)
-                    )
-                    ScheduleTimeItem(
-                        icon = Icons.Rounded.LightMode,
-                        label = "Wake",
-                        time = wakeTimeDisplay
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ScheduleTimeItem(
+                            icon = Icons.Rounded.DarkMode,
+                            label = "Sleep",
+                            time = sleepTimeDisplay
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(48.dp)
+                                .background(Stroke)
+                        )
+                        ScheduleTimeItem(
+                            icon = Icons.Rounded.LightMode,
+                            label = "Wake",
+                            time = wakeTimeDisplay
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                QuickInfoChip(
-                    icon = Icons.Rounded.GraphicEq,
-                    label = "Sound",
-                    value = preferredSound.displayName,
-                    modifier = Modifier.weight(1f),
-                    onClick = onNavigateToSettings
-                )
-                QuickInfoChip(
-                    icon = Icons.Rounded.Tune,
-                    label = "Sensitivity",
-                    value = sensitivity.name.lowercase()
-                        .replaceFirstChar { it.uppercase() },
-                    modifier = Modifier.weight(1f),
-                    onClick = onNavigateToSettings
-                )
+            FadeSlideIn(delayMillis = 280) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    QuickInfoChip(
+                        icon = Icons.Rounded.GraphicEq,
+                        label = "Sound",
+                        value = preferredSound.displayName,
+                        modifier = Modifier.weight(1f),
+                        onClick = onNavigateToSettings
+                    )
+                    QuickInfoChip(
+                        icon = Icons.Rounded.Tune,
+                        label = "Sensitivity",
+                        value = sensitivity.name.lowercase()
+                            .replaceFirstChar { it.uppercase() },
+                        modifier = Modifier.weight(1f),
+                        onClick = onNavigateToSettings
+                    )
+                }
             }
         }
     }

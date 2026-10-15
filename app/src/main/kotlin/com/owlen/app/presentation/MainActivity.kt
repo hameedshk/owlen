@@ -36,7 +36,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         enableEdgeToEdge()
-        window.setDecorFitsSystemWindows(false)
         setContent {
             OwlenTheme {
                 val onboardingCompleted by onboardingCompletedFlow.collectAsState(initial = false)
