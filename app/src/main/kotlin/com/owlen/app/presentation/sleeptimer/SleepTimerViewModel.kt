@@ -111,7 +111,11 @@ class SleepTimerViewModel @Inject constructor(
             if (schedule.enabled) {
                 scheduler.scheduleNext(schedule)
             } else {
+                // Cancelling the alarm only stops future starts. If the window is
+                // open right now the sound is already playing, and leaving it to
+                // run would ignore the switch the user just turned off.
                 scheduler.cancel()
+                SleepProtectionService.stopTimer(appContext)
             }
             refreshExactAlarmPermission()
         }

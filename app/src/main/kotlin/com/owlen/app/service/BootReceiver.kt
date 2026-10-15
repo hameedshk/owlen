@@ -13,13 +13,17 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent?.action != Intent.ACTION_BOOT_COMPLETED || context == null) return
 
+        // onReceive hands us a ReceiverRestrictedContext, which is not a Hilt
+        // component holder — resolve the application context before any lookup.
+        val appContext = context.applicationContext
+
         val goAsync = goAsync()
-        val entryPoint = EntryPoints.get(context, AppModule.SettingsEntryPoint::class.java)
+        val entryPoint = EntryPoints.get(appContext, AppModule.SettingsEntryPoint::class.java)
         GlobalScope.launch {
             try {
                 val schedule = entryPoint.settingsRepository().getSchedule()
                 if (schedule.enabled) {
-                    val scheduler = SleepTimerScheduler(context)
+                    val scheduler = SleepTimerScheduler(appContext)
                     scheduler.scheduleNext(schedule)
                 }
             } finally {

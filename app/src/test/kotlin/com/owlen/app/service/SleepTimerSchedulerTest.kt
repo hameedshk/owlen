@@ -219,4 +219,56 @@ class SleepTimerSchedulerTest {
         assertEquals(6, hour)
         assertEquals(45, minute)
     }
+
+    // The alarm receiver re-arms from just past the window it opened. Searching
+    // from "now" instead would land back inside the window and return now again,
+    // re-firing the alarm in a loop (observed on device: one broadcast every 5s).
+
+    @Test
+    fun `re-arm after a midnight-crossing window lands on the next start`() {
+        // Window 18:00 -> 08:00 opened at 18:00; it closes at 08:00 tomorrow.
+        val schedule = SleepTimerSchedule(
+            enabled = true,
+            startHour = 18,
+            startMinute = 0,
+            endHour = 8,
+            endMinute = 0,
+            sound = MaskingSound.RAIN
+        )
+        val windowEnd = createCalendar(8, 0, dayOffset = 1)
+
+        val trigger = SleepTimerScheduler.computeNextTriggerTime(
+            schedule,
+            windowEnd + 60_000L
+        )
+
+        val (hour, minute) = getHourMinuteFromMs(trigger)
+        assertEquals(18, hour)
+        assertEquals(0, minute)
+        assertTrue(trigger > windowEnd, "re-arm must be after the window it just opened")
+    }
+
+    @Test
+    fun `re-arm after a same-day window lands on the next start`() {
+        // Window 06:00 -> 08:00 opened at 06:00; it closes at 08:00 today.
+        val schedule = SleepTimerSchedule(
+            enabled = true,
+            startHour = 6,
+            startMinute = 0,
+            endHour = 8,
+            endMinute = 0,
+            sound = MaskingSound.RAIN
+        )
+        val windowEnd = createCalendar(8, 0)
+
+        val trigger = SleepTimerScheduler.computeNextTriggerTime(
+            schedule,
+            windowEnd + 60_000L
+        )
+
+        val (hour, minute) = getHourMinuteFromMs(trigger)
+        assertEquals(6, hour)
+        assertEquals(0, minute)
+        assertTrue(trigger > windowEnd, "re-arm must be after the window it just opened")
+    }
 }

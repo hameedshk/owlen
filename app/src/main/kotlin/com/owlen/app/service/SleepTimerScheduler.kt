@@ -12,14 +12,21 @@ class SleepTimerScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val requestCode = 9001
 
-    fun scheduleNext(schedule: SleepTimerSchedule) {
+    /**
+     * Arms the next start alarm.
+     *
+     * [fromMs] is the instant the search starts from. It defaults to now, which
+     * makes an enable-while-inside-the-window start immediately. The alarm
+     * receiver must instead pass an instant past the window it just opened —
+     * re-arming from "now" would resolve to now again and re-fire in a loop.
+     */
+    fun scheduleNext(schedule: SleepTimerSchedule, fromMs: Long = System.currentTimeMillis()) {
         if (!schedule.enabled) {
             cancel()
             return
         }
 
-        val now = System.currentTimeMillis()
-        val triggerTimeMs = Companion.computeNextTriggerTime(schedule, now)
+        val triggerTimeMs = Companion.computeNextTriggerTime(schedule, fromMs)
 
         val intent = Intent(context, SleepTimerAlarmReceiver::class.java).apply {
             putExtra("sound", schedule.sound.name)

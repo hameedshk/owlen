@@ -26,6 +26,11 @@ class SleepTimerAlarmReceiver : BroadcastReceiver() {
             return
         }
 
+        // onReceive hands us a ReceiverRestrictedContext, which is not a Hilt
+        // component holder and cannot bind a service. Everything below must run
+        // against the application context.
+        val appContext = context.applicationContext
+
         val goAsync = goAsync()
         GlobalScope.launch {
             try {
@@ -45,7 +50,7 @@ class SleepTimerAlarmReceiver : BroadcastReceiver() {
                 val durationMs = endCal.timeInMillis - now
                 if (durationMs > 0) {
                     SleepProtectionService.startTimer(
-                        context,
+                        appContext,
                         sound,
                         durationMs,
                         maxVolume,
@@ -54,12 +59,15 @@ class SleepTimerAlarmReceiver : BroadcastReceiver() {
                     )
                 }
 
-                // Schedule the next day's alarm
-                val entryPoint = EntryPoints.get(context, AppModule.SettingsEntryPoint::class.java)
+                // Schedule the next day's alarm. We are inside the window we just
+                // opened, so the search has to start after it closes — otherwise
+                // "next start" resolves to now and the alarm re-fires in a loop.
+                val entryPoint =
+                    EntryPoints.get(appContext, AppModule.SettingsEntryPoint::class.java)
                 val schedule = entryPoint.settingsRepository().getSchedule()
                 if (schedule.enabled) {
-                    val scheduler = SleepTimerScheduler(context)
-                    scheduler.scheduleNext(schedule)
+                    val scheduler = SleepTimerScheduler(appContext)
+                    scheduler.scheduleNext(schedule, endCal.timeInMillis + 60_000L)
                 }
             } finally {
                 goAsync.finish()
