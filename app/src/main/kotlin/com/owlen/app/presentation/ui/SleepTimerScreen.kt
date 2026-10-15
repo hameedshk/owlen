@@ -91,7 +91,18 @@ fun SleepTimerScreen(
                 SoundHeroCard(
                     sound = config.sound,
                     label = "Timer sound",
-                    onClick = { openDialog = TimerDialog.SOUND }
+                    onClick = { openDialog = TimerDialog.SOUND },
+                    onLongPress = {
+                        // Long-press to preview the sound
+                        val previewEnabled = !isProtectionRunning && !isTimerRunning
+                        if (previewEnabled && !isPreviewPlaying) {
+                            viewModel.startPreview(
+                                sound = config.sound,
+                                durationMs = PREVIEW_DURATION_MS,
+                                volume = settings.maxVolume
+                            )
+                        }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
