@@ -37,6 +37,10 @@ test_output.log
 lint-report.html
 lint-report.xml
 
+# On-device debugging artifacts (see docs/On_Device_Debugging.md)
+window_dump*.xml
+uidump*.xml
+
 # Profiling / misc
 *.hprof
 .DS_Store
