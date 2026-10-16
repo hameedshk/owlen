@@ -23,6 +23,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
@@ -310,8 +312,10 @@ private fun DrawScope.drawStreaks(
         val swayedAngle = if (windSway) angle + random.nextFloat() * 5 - 2.5f else angle
         val radians = Math.toRadians(swayedAngle.toDouble()).toFloat()
         val startX = random.nextFloat() * size.width
-        val startY = -50f
-        val length = random.nextFloat() * 80 + 40
+        // Spread start heights across the card (not just a thin band above it)
+        // so streaks visibly cross most of the scene, not just the top edge.
+        val startY = random.nextFloat() * size.height * 0.6f - 100f
+        val length = random.nextFloat() * 160 + 120
         val endX = startX + length * cos(radians)
         val endY = startY + length * sin(radians)
 
@@ -335,8 +339,10 @@ private fun DrawScope.drawWaves(
 ) {
     repeat(bandCount) { band ->
         val color = colorRange.getOrElse(band) { colorRange.last() }
-        val amplitude = 10f + band * 5f
-        val bandHeight = 15f
+        // Scaled to canvas height (not fixed px) so the wave crests are
+        // actually visible against the card instead of a few flat pixels.
+        val amplitude = size.height * (0.025f + band * 0.015f)
+        val bandHeight = size.height * 0.05f
 
         // Cache wave points for performance (remove recalculation on every frame)
         val points = WaveCalculator.calculateWavePoints(
@@ -385,17 +391,22 @@ private fun DrawScope.drawArcs(
     opacityFadePerArc: Float = 0.08f,
     rotateAngle: Float = 0f  // Rotation angle for dynamic fan effect
 ) {
-    repeat(count) { arc ->
-        val color = colorRange.getOrElse(arc) { colorRange.last() }
-        val radius = baseRadius + arc * radiusStep
-        // Opacity fades with each arc layer for depth effect
-        val opacity = (baseOpacity - arc * opacityFadePerArc).coerceIn(0f, 1f)
+    // Stroked rings (not filled disks) so each arc stays visible instead of
+    // being overpainted by the next, larger circle drawn on top of it.
+    rotate(degrees = rotateAngle, pivot = Offset(centerX, centerY)) {
+        repeat(count) { arc ->
+            val color = colorRange.getOrElse(arc) { colorRange.last() }
+            val radius = baseRadius + arc * radiusStep
+            // Opacity fades with each arc layer for depth effect
+            val opacity = (baseOpacity - arc * opacityFadePerArc).coerceIn(0f, 1f)
 
-        drawCircle(
-            color = color.copy(alpha = opacity),
-            radius = radius,
-            center = Offset(centerX, centerY)
-        )
+            drawCircle(
+                color = color.copy(alpha = opacity),
+                radius = radius,
+                center = Offset(centerX, centerY),
+                style = Stroke(width = radiusStep * 0.6f)
+            )
+        }
     }
 }
 

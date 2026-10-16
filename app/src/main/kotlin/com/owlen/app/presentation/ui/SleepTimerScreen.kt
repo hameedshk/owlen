@@ -69,141 +69,174 @@ fun SleepTimerScreen(
     val isProtectionRunning by viewModel.isProtectionRunning.collectAsState()
     val isTimerRunning by viewModel.isTimerRunning.collectAsState()
     val isPreviewPlaying by viewModel.isPreviewPlaying.collectAsState()
+    android.util.Log.d(
+        "OwlenDiag",
+        "COMPOSE recompose isPreviewPlaying=$isPreviewPlaying isTimerRunning=$isTimerRunning " +
+            "serviceState=$serviceState"
+    )
 
     var openDialog by remember { mutableStateOf(TimerDialog.NONE) }
 
     val timerState = (serviceState as? ServiceState.TimedPlaybackActive)?.takeIf { isTimerRunning }
     val volumePct = (settings.maxVolume * 100).toInt()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        OwlenScreenHeader(
-            title = "Sleep Timer",
-            overline = "Play now",
-            onNavigateBack = onNavigateBack
-        )
-
-        FadeSlideIn {
-            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                SoundHeroCard(
-                    sound = config.sound,
-                    label = "Timer sound",
-                    onClick = { openDialog = TimerDialog.SOUND },
-                    onLongPress = {
-                        // Long-press to preview the sound
-                        val previewEnabled = !isProtectionRunning && !isTimerRunning
-                        if (previewEnabled && !isPreviewPlaying) {
-                            viewModel.startPreview(
-                                sound = config.sound,
-                                durationMs = PREVIEW_DURATION_MS,
-                                volume = settings.maxVolume
-                            )
-                        }
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                OwlenCard(contentPadding = 0.dp) {
-                    OwlenRow(
-                        title = "Duration",
-                        value = formatDuration(config.durationMinutes),
-                        leading = { RowIcon(Icons.Rounded.HourglassEmpty) },
-                        onClick = { openDialog = TimerDialog.DURATION }
-                    )
-                    OwlenRowDivider()
-                    OwlenRow(
-                        title = "Fade out over",
-                        value = if (config.fadeOutMinutes == 0) {
-                            "Off"
-                        } else {
-                            formatDuration(config.fadeOutMinutes)
-                        },
-                        leading = { RowIcon(Icons.Rounded.GraphicEq) },
-                        onClick = { openDialog = TimerDialog.FADE_OUT }
-                    )
-                    OwlenRowDivider()
-                    OwlenRow(
-                        title = "Volume",
-                        subtitle = "Change under Settings → Maximum Volume",
-                        value = "$volumePct%",
-                        leading = { RowIcon(Icons.AutoMirrored.Rounded.VolumeUp) }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        FadeSlideIn(delayMillis = 100) {
-            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                // Preview shares the single playback pipeline, so it cannot run
-                // while monitoring or a timer already owns it.
-                val previewEnabled = !isProtectionRunning && !isTimerRunning
-
-                OwlenCard(contentPadding = 0.dp) {
-                    OwlenRow(
-                        title = if (isPreviewPlaying) "Stop preview" else "Preview sound",
-                        subtitle = when {
-                            isProtectionRunning -> "Unavailable while protection is running"
-                            isTimerRunning -> "Unavailable while the timer is running"
-                            else -> "Hear ${config.sound.displayName} for 8 seconds"
-                        },
-                        leading = {
-                            RowIcon(
-                                if (isPreviewPlaying) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
-                                tint = if (previewEnabled) Primary else TextSecondary
-                            )
-                        },
-                        onClick = if (previewEnabled) {
-                            {
-                                if (isPreviewPlaying) {
-                                    viewModel.stopPreview()
-                                } else {
-                                    viewModel.startPreview(
-                                        sound = config.sound,
-                                        durationMs = PREVIEW_DURATION_MS,
-                                        volume = settings.maxVolume
-                                    )
-                                }
-                            }
-                        } else {
-                            null
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                OwlenInfoCard(
-                    text = if (config.fadeOutMinutes == 0) {
-                        "${config.sound.displayName} plays at $volumePct% for " +
-                            "${formatDuration(config.durationMinutes)}, then stops."
-                    } else {
-                        "${config.sound.displayName} plays for " +
-                            "${formatDuration(config.durationMinutes)}, easing down to silence " +
-                            "over the last ${formatDuration(config.fadeOutMinutes)}."
-                    }
-                )
-            }
-        }
-
-        if (timerState != null) {
-            Spacer(modifier = Modifier.height(20.dp))
-            TimerCountdown(
-                remainingMs = timerState.remainingMs,
-                totalDurationMs = timerState.totalDurationMs,
-                volume = timerState.volume,
-                modifier = Modifier.padding(horizontal = 20.dp)
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            OwlenScreenHeader(
+                title = "Sleep Timer",
+                overline = "Play now",
+                onNavigateBack = onNavigateBack
             )
+
+            FadeSlideIn {
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    SoundHeroCard(
+                        sound = config.sound,
+                        label = "Timer sound",
+                        onClick = {
+                            // Changing the sound mid-run would silently apply only to the
+                            // *next* timer — the live playback keeps using the old config.
+                            if (!isTimerRunning) openDialog = TimerDialog.SOUND
+                        },
+                        onLongPress = {
+                            // Long-press to preview the sound
+                            val previewEnabled = !isProtectionRunning && !isTimerRunning
+                            if (previewEnabled && !isPreviewPlaying) {
+                                viewModel.startPreview(
+                                    sound = config.sound,
+                                    durationMs = PREVIEW_DURATION_MS,
+                                    volume = settings.maxVolume
+                                )
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    OwlenCard(contentPadding = 0.dp) {
+                        OwlenRow(
+                            title = "Duration",
+                            value = formatDuration(config.durationMinutes),
+                            leading = { RowIcon(Icons.Rounded.HourglassEmpty) },
+                            onClick = if (isTimerRunning) null else { { openDialog = TimerDialog.DURATION } }
+                        )
+                        OwlenRowDivider()
+                        OwlenRow(
+                            title = "Fade out over",
+                            value = if (config.fadeOutMinutes == 0) {
+                                "Off"
+                            } else {
+                                formatDuration(config.fadeOutMinutes)
+                            },
+                            leading = { RowIcon(Icons.Rounded.GraphicEq) },
+                            onClick = if (isTimerRunning) null else { { openDialog = TimerDialog.FADE_OUT } }
+                        )
+                        OwlenRowDivider()
+                        OwlenRow(
+                            title = "Volume",
+                            subtitle = "Change under Settings → Maximum Volume",
+                            value = "$volumePct%",
+                            leading = { RowIcon(Icons.AutoMirrored.Rounded.VolumeUp) }
+                        )
+                    }
+
+                    if (isTimerRunning) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Duration and fade-out are locked while the timer is running — " +
+                                "stop it to change them.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            FadeSlideIn(delayMillis = 100) {
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    // Preview shares the single playback pipeline, so it cannot run
+                    // while monitoring or a timer already owns it.
+                    val previewEnabled = !isProtectionRunning && !isTimerRunning
+
+                    OwlenCard(contentPadding = 0.dp) {
+                        OwlenRow(
+                            title = if (isPreviewPlaying) "Stop preview" else "Preview sound",
+                            subtitle = when {
+                                isProtectionRunning -> "Unavailable while protection is running"
+                                isTimerRunning -> "Unavailable while the timer is running"
+                                isPreviewPlaying -> "Playing ${config.sound.displayName}…"
+                                else -> "Hear ${config.sound.displayName} for 8 seconds"
+                            },
+                            leading = {
+                                RowIcon(
+                                    if (isPreviewPlaying) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
+                                    tint = if (previewEnabled) Primary else TextSecondary
+                                )
+                            },
+                            onClick = if (previewEnabled) {
+                                {
+                                    if (isPreviewPlaying) {
+                                        viewModel.stopPreview()
+                                    } else {
+                                        viewModel.startPreview(
+                                            sound = config.sound,
+                                            durationMs = PREVIEW_DURATION_MS,
+                                            volume = settings.maxVolume
+                                        )
+                                    }
+                                }
+                            } else {
+                                null
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    OwlenInfoCard(
+                        text = when {
+                            config.fadeOutMinutes == 0 ->
+                                "${config.sound.displayName} plays at $volumePct% for " +
+                                    "${formatDuration(config.durationMinutes)}, then stops."
+                            config.fadeOutMinutes >= config.durationMinutes ->
+                                "${config.sound.displayName} eases down to silence for the entire " +
+                                    "${formatDuration(config.durationMinutes)} — it never holds at " +
+                                    "full volume with fade-out set this long."
+                            else ->
+                                "${config.sound.displayName} plays for " +
+                                    "${formatDuration(config.durationMinutes)}, easing down to silence " +
+                                    "over the last ${formatDuration(config.fadeOutMinutes)}."
+                        }
+                    )
+                }
+            }
+
+            if (timerState != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+                TimerCountdown(
+                    remainingMs = timerState.remainingMs,
+                    totalDurationMs = timerState.totalDurationMs,
+                    volume = timerState.volume,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
-
-        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+        // Fixed footer: Start/Stop stays on screen without scrolling, so the
+        // control is never hidden below the countdown card mid-timer.
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .padding(top = 12.dp, bottom = 24.dp)
+        ) {
             when {
                 isTimerRunning -> OwlenButton(
                     text = "Stop Timer",
@@ -241,8 +274,6 @@ fun SleepTimerScreen(
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
     }
 
     when (openDialog) {

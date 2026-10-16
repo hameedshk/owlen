@@ -7,71 +7,133 @@ class SleepTimerCalculatorTest {
 
     private val calculator = SleepTimerCalculator
 
+    // --- fadeOutVolume: timer mode, holds at target then ramps down to silence ---
+
     @Test
-    fun `volumeAt elapsed 0 returns near-silent volume`() {
-        val result = calculator.volumeAt(elapsedMs = 0L, durationMs = 60_000L, targetVolume = 0.8f)
-        assertEquals(SleepTimerCalculator.NEAR_SILENT_VOLUME, result, 0.0001f)
+    fun `fadeOutVolume holds at target while outside the fade window`() {
+        val result = calculator.fadeOutVolume(
+            elapsedMs = 0L, durationMs = 60_000L, fadeOutMs = 10_000L, targetVolume = 0.8f
+        )
+        assertEquals(0.8f, result, 0.0001f)
     }
 
     @Test
-    fun `volumeAt elapsed equals duration returns target volume`() {
-        val targetVolume = 0.75f
-        val result = calculator.volumeAt(elapsedMs = 60_000L, durationMs = 60_000L, targetVolume = targetVolume)
-        assertEquals(targetVolume, result, 0.0001f)
+    fun `fadeOutVolume at the fade window boundary still returns target`() {
+        // remaining == fadeOutMs is still the last instant of the hold phase
+        val result = calculator.fadeOutVolume(
+            elapsedMs = 50_000L, durationMs = 60_000L, fadeOutMs = 10_000L, targetVolume = 0.8f
+        )
+        assertEquals(0.8f, result, 0.0001f)
     }
 
     @Test
-    fun `volumeAt midpoint returns linear interpolation`() {
-        val targetVolume = 0.8f
-        val result = calculator.volumeAt(elapsedMs = 30_000L, durationMs = 60_000L, targetVolume = targetVolume)
-        val expected = SleepTimerCalculator.NEAR_SILENT_VOLUME +
-                (targetVolume - SleepTimerCalculator.NEAR_SILENT_VOLUME) * 0.5f
+    fun `fadeOutVolume midway through the fade window is halfway to the floor`() {
+        val target = 0.8f
+        val result = calculator.fadeOutVolume(
+            elapsedMs = 55_000L, durationMs = 60_000L, fadeOutMs = 10_000L, targetVolume = target
+        )
+        val floor = SleepTimerCalculator.rampFloor(target)
+        val expected = floor + (target - floor) * 0.5f
         assertEquals(expected, result, 0.0001f)
     }
 
     @Test
-    fun `volumeAt elapsed greater than duration clamps to target`() {
-        val targetVolume = 0.7f
-        val result = calculator.volumeAt(elapsedMs = 120_000L, durationMs = 60_000L, targetVolume = targetVolume)
-        assertEquals(targetVolume, result, 0.0001f)
+    fun `fadeOutVolume reaches silence exactly at duration end`() {
+        val result = calculator.fadeOutVolume(
+            elapsedMs = 60_000L, durationMs = 60_000L, fadeOutMs = 10_000L, targetVolume = 0.8f
+        )
+        assertEquals(0f, result, 0.0001f)
     }
 
     @Test
-    fun `volumeAt zero duration returns target volume`() {
-        val targetVolume = 0.6f
-        val result = calculator.volumeAt(elapsedMs = 0L, durationMs = 0L, targetVolume = targetVolume)
-        assertEquals(targetVolume, result, 0.0001f)
+    fun `fadeOutVolume past duration stays silent`() {
+        val result = calculator.fadeOutVolume(
+            elapsedMs = 90_000L, durationMs = 60_000L, fadeOutMs = 10_000L, targetVolume = 0.8f
+        )
+        assertEquals(0f, result, 0.0001f)
     }
 
     @Test
-    fun `volumeAt negative duration returns target volume`() {
-        val targetVolume = 0.5f
-        val result = calculator.volumeAt(elapsedMs = 0L, durationMs = -1000L, targetVolume = targetVolume)
-        assertEquals(targetVolume, result, 0.0001f)
+    fun `fadeOutVolume with zero duration is silent`() {
+        val result = calculator.fadeOutVolume(
+            elapsedMs = 0L, durationMs = 0L, fadeOutMs = 10_000L, targetVolume = 0.8f
+        )
+        assertEquals(0f, result, 0.0001f)
     }
 
     @Test
-    fun `ramp is monotonically non-decreasing over duration`() {
-        val targetVolume = 0.9f
-        var previousVolume = calculator.volumeAt(0L, 60_000L, targetVolume)
+    fun `fadeOutVolume with no fade window holds target for the whole duration`() {
+        val target = 0.8f
+        val atStart = calculator.fadeOutVolume(0L, 60_000L, fadeOutMs = 0L, targetVolume = target)
+        val atMid = calculator.fadeOutVolume(30_000L, 60_000L, fadeOutMs = 0L, targetVolume = target)
+        assertEquals(target, atStart, 0.0001f)
+        assertEquals(target, atMid, 0.0001f)
+    }
 
-        for (elapsedMs in listOf(5_000L, 15_000L, 30_000L, 45_000L, 60_000L)) {
-            val volume = calculator.volumeAt(elapsedMs, 60_000L, targetVolume)
-            assert(volume >= previousVolume - 0.0001f) { "Ramp decreased at $elapsedMs: $previousVolume -> $volume" }
-            previousVolume = volume
+    @Test
+    fun `fadeOutVolume starts ramping immediately when fadeOutMs equals durationMs`() {
+        // Confirmed live on-device: Duration=5m, Fade out=5m clamps to one continuous
+        // ramp with no hold phase, so volume is already below target one tick after start.
+        val target = 0.7f
+        val atStart = calculator.fadeOutVolume(0L, 300_000L, fadeOutMs = 300_000L, targetVolume = target)
+        val oneSecondIn = calculator.fadeOutVolume(1_000L, 300_000L, fadeOutMs = 300_000L, targetVolume = target)
+        assertEquals(target, atStart, 0.0001f)
+        assert(oneSecondIn < target) { "Expected ramp to have started, got $oneSecondIn" }
+    }
+
+    // --- fadeInVolume: schedule mode, starts near-silent and ramps up to target ---
+
+    @Test
+    fun `fadeInVolume starts at the near-silent floor`() {
+        val result = calculator.fadeInVolume(elapsedMs = 0L, fadeInMs = 600_000L, targetVolume = 0.8f)
+        assertEquals(SleepTimerCalculator.NEAR_SILENT_VOLUME, result, 0.0001f)
+    }
+
+    @Test
+    fun `fadeInVolume reaches target exactly at fadeInMs`() {
+        val target = 0.8f
+        val result = calculator.fadeInVolume(elapsedMs = 600_000L, fadeInMs = 600_000L, targetVolume = target)
+        assertEquals(target, result, 0.0001f)
+    }
+
+    @Test
+    fun `fadeInVolume midpoint is halfway between floor and target`() {
+        val target = 0.8f
+        val result = calculator.fadeInVolume(elapsedMs = 300_000L, fadeInMs = 600_000L, targetVolume = target)
+        val floor = SleepTimerCalculator.rampFloor(target)
+        val expected = floor + (target - floor) * 0.5f
+        assertEquals(expected, result, 0.0001f)
+    }
+
+    @Test
+    fun `fadeInVolume clamps to target after fadeInMs has elapsed`() {
+        val target = 0.8f
+        val result = calculator.fadeInVolume(elapsedMs = 900_000L, fadeInMs = 600_000L, targetVolume = target)
+        assertEquals(target, result, 0.0001f)
+    }
+
+    @Test
+    fun `fadeInVolume with no fade window jumps straight to target`() {
+        val target = 0.8f
+        val result = calculator.fadeInVolume(elapsedMs = 0L, fadeInMs = 0L, targetVolume = target)
+        assertEquals(target, result, 0.0001f)
+    }
+
+    @Test
+    fun `fadeInVolume below near-silent target clamps the floor to target`() {
+        val target = 0.01f // below NEAR_SILENT_VOLUME
+        val atStart = calculator.fadeInVolume(elapsedMs = 0L, fadeInMs = 600_000L, targetVolume = target)
+        assertEquals(target, atStart, 0.0001f)
+    }
+
+    @Test
+    fun `fadeInVolume is monotonically non-decreasing across the ramp`() {
+        val target = 0.9f
+        var previous = calculator.fadeInVolume(0L, 600_000L, target)
+        for (elapsedMs in listOf(100_000L, 300_000L, 450_000L, 600_000L)) {
+            val volume = calculator.fadeInVolume(elapsedMs, 600_000L, target)
+            assert(volume >= previous - 0.0001f) { "Ramp decreased at $elapsedMs: $previous -> $volume" }
+            previous = volume
         }
-    }
-
-    @Test
-    fun `degenerate target volume below near-silent clamps start`() {
-        val targetVolume = 0.01f  // Below NEAR_SILENT_VOLUME
-        val atStart = calculator.volumeAt(0L, 60_000L, targetVolume)
-        val atMid = calculator.volumeAt(30_000L, 60_000L, targetVolume)
-        val atEnd = calculator.volumeAt(60_000L, 60_000L, targetVolume)
-
-        // Start should clamp to target, and ramp should be monotonic
-        assert(atStart <= targetVolume + 0.0001f)
-        assert(atMid >= atStart - 0.0001f)
-        assert(atEnd >= atMid - 0.0001f)
     }
 }

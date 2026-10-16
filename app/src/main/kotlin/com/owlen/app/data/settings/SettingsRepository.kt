@@ -83,9 +83,9 @@ class SettingsRepository @Inject constructor(
     private fun preferencesToSchedule(pref: Preferences): SleepTimerSchedule {
         return SleepTimerSchedule(
             enabled = pref[SCHEDULE_ENABLED] ?: false,
-            startHour = pref[SCHEDULE_START_HOUR] ?: 6,
+            startHour = pref[SCHEDULE_START_HOUR] ?: 22,
             startMinute = pref[SCHEDULE_START_MINUTE] ?: 0,
-            endHour = pref[SCHEDULE_END_HOUR] ?: 8,
+            endHour = pref[SCHEDULE_END_HOUR] ?: 6,
             endMinute = pref[SCHEDULE_END_MINUTE] ?: 0,
             sound = pref[SCHEDULE_SOUND]?.let {
                 try {

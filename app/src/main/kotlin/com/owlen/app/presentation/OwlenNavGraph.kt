@@ -51,6 +51,7 @@ import com.owlen.app.presentation.enrollment.EnrollmentViewModel
 import com.owlen.app.presentation.home.HomeViewModel
 import com.owlen.app.presentation.session.SessionViewModel
 import com.owlen.app.presentation.settings.SettingsViewModel
+import com.owlen.app.presentation.ui.AboutScreen
 import com.owlen.app.presentation.ui.ActiveModeScreen
 import com.owlen.app.presentation.ui.CalibrationScreen
 import com.owlen.app.presentation.ui.EnrollmentScreen
@@ -93,6 +94,7 @@ private object Routes {
     const val SESSION_DETAILS = "session_details"
     const val SETTINGS = "settings"
     const val ENROLLMENT = "enrollment"
+    const val ABOUT = "about"
 }
 
 private sealed class BottomTab(
@@ -126,6 +128,13 @@ fun OwlenNavGraph(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val context = LocalContext.current
+    val appVersion = remember {
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+        } catch (e: PackageManager.NameNotFoundException) {
+            "1.0.0"
+        }
+    }
 
     val showBottomNav = currentRoute in routesWithBottomNav
 
@@ -509,6 +518,7 @@ fun OwlenNavGraph(
                     rainBehaviourEnabled = settings.rainBehaviourEnabled,
                     soundLevelFloorDb = settings.soundLevelFloor.toInt(),
                     batteryOptimisationAllowed = batteryExempt,
+                    appVersion = appVersion,
                     schedule = schedule,
                     customPrototypes = customPrototypes,
                     onNavigateToEnrollment = { navController.navigate(Routes.ENROLLMENT) },
@@ -523,8 +533,20 @@ fun OwlenNavGraph(
                     onRainBehaviourChanged = { settingsViewModel.updateRainBehaviour(it) },
                     onSoundFloorChanged = { settingsViewModel.updateSoundLevelFloor(it.toFloat()) },
                     onBatteryOptimisationClick = {
-                        if (!batteryExempt) BatteryOptimization.requestExemption(context)
-                    }
+                        if (batteryExempt) {
+                            BatteryOptimization.openSettings(context)
+                        } else {
+                            BatteryOptimization.requestExemption(context)
+                        }
+                    },
+                    onNavigateToAbout = { navController.navigate(Routes.ABOUT) }
+                )
+            }
+
+            composable(Routes.ABOUT) {
+                AboutScreen(
+                    appVersion = appVersion,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 

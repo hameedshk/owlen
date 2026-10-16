@@ -35,7 +35,8 @@ object WaveCalculator {
         var x = 0f
         while (x <= width) {
             // sin() expects radians, convert from degrees
-            val y = baseY + (band * bandHeight) + amplitude * sin((x * frequency + phaseShift) * Math.PI / 180).toFloat()
+            // phaseShift is applied per-band so bands don't all crest/trough together
+            val y = baseY + (band * bandHeight) + amplitude * sin((x * frequency + phaseShift * band) * Math.PI / 180).toFloat()
             points.add(Offset(x, y))
             x += step
         }

@@ -24,11 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.owlen.app.presentation.ui.theme.OnPrimary
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Stroke
-import com.owlen.app.presentation.ui.theme.SurfaceCard
+import com.owlen.app.presentation.ui.theme.SurfaceSunken
 import com.owlen.app.presentation.ui.theme.TextSecondary
 
 /** Amber-on-stroke slider styling shared by settings dialogs. */
@@ -77,8 +78,10 @@ fun OwlenRadio(
 
 /**
  * Soft rounded segmented toggle (e.g. AM/PM): selected segment gets an amber
- * face with dark text, unselected segments sit in a background well. Selection
- * change animates via color crossfade.
+ * face with dark text, unselected segments sit transparent in the control's
+ * own recessed well (so it reads against both plain screens and dialog/card
+ * panels, which share the same fill as a plain pill). Selection change
+ * animates via color crossfade.
  */
 @Composable
 fun OwlenSegmented(
@@ -89,13 +92,13 @@ fun OwlenSegmented(
 ) {
     Row(
         modifier = modifier
-            .background(SurfaceCard, RoundedCornerShape(12.dp))
+            .background(SurfaceSunken, RoundedCornerShape(12.dp))
             .padding(4.dp)
     ) {
         options.forEachIndexed { index, option ->
             val selected = index == selectedIndex
             val segmentColor by animateColorAsState(
-                targetValue = if (selected) Primary else SurfaceCard,
+                targetValue = if (selected) Primary else Color.Transparent,
                 animationSpec = tween(180),
                 label = "segmentFill"
             )
@@ -110,13 +113,14 @@ fun OwlenSegmented(
                     .clip(RoundedCornerShape(8.dp))
                     .background(segmentColor)
                     .clickable { onSelect(index) }
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 6.dp, vertical = 14.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = option.uppercase(),
                     style = MaterialTheme.typography.labelMedium,
-                    color = textColor
+                    color = textColor,
+                    maxLines = 1
                 )
             }
         }

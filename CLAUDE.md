@@ -10,6 +10,8 @@ sleep and plays masking sounds reactively when a detected event is likely
 
 to disturb sleep. It does NOT play continuously.
 
+See docs/FEATURES.md for the full current feature list (kept in sync with source, not just the original spec docs).
+
 
 
 ## Stack
@@ -22,11 +24,11 @@ to disturb sleep. It does NOT play continuously.
 
 - DI: Hilt
 
-- ML: TensorFlow Lite (YAMNet + MLP classifier)
+- ML: TensorFlow Lite — single bundled model `yamnet.tflite` (CPU only, 2 threads). No MLP classifier: `EventDetector` is a pure Kotlin max-score mapping from YAMNet's 521 AudioSet classes down to Owlen's 24 `EventClass` values. The same inference call's 1024-dim embedding output feeds custom sound matching (see below).
 
-- Audio capture: AudioRecord (NOT MediaRecorder)
+- Audio capture: AudioRecord (NOT MediaRecorder) — 16kHz mono, 15600-sample (0.975s) windows
 
-- Audio playback: AudioTrack (NOT MediaPlayer)
+- Audio playback: AudioTrack (NOT MediaPlayer) — all masking sounds are procedurally synthesized on-device (no bundled audio files)
 
 - Settings: DataStore Preferences (NOT SharedPreferences)
 
@@ -38,21 +40,45 @@ to disturb sleep. It does NOT play continuously.
 
 ## Layer Structure
 
-- data/audio/     → AudioCapture, AudioPlayer
+- data/audio/      → AudioCapture, AudioPlayer, NoiseGenerator (procedural noise synthesis)
 
-- data/ml/        → FeatureExtractor, EventDetector
+- data/ml/         → FeatureExtractor (YAMNet TFLite), EventDetector (score→class mapping), RmsCalculator
 
-- data/log/       → SessionLogger
+- data/log/        → SessionLogger (flat JSON session files)
 
-- domain/model/   → All data classes and enums
+- data/settings/   → SettingsRepository (DataStore)
 
-- domain/scorer/  → DisturbanceScorer
+- data/prototypes/ → SoundPrototypeRepository (custom-enrolled sound storage)
 
-- domain/policy/  → PolicyEngine
+- domain/model/    → All data classes and enums (EventClass, MaskingSound, SleepSettings, DetectedEvent, DisturbanceResult, PolicyAction, Sensitivity, SoundPrototype, SleepTimerConfig, SleepTimerSchedule, ...)
 
-- presentation/   → ViewModels + Compose screens
+- domain/scorer/   → DisturbanceScorer
 
-- service/        → SleepProtectionService
+- domain/policy/   → PolicyEngine
+
+- domain/matcher/  → CustomSoundMatcher, PrototypeBuilder, EventArbiter (custom sound enrollment/matching — see below)
+
+- domain/timer/    → SleepTimerCalculator, ScheduleSummary
+
+- presentation/    → ViewModels (calibration/, enrollment/, home/, session/, settings/, sleeptimer/) + Compose screens (ui/) + reusable components (ui/components/) + theme (ui/theme/) + util/
+
+- service/         → SleepProtectionService (capture→inference→score→policy→playback pipeline), ServiceRepository, ServiceState, NotificationHelper, BootReceiver, SleepTimerScheduler, SleepTimerAlarmReceiver
+
+- di/              → AppModule (Hilt)
+
+
+
+## Custom Sound Enrollment (built, but not yet reflected in UX_Spec_v2.md)
+
+- Users can enroll personal sounds (e.g. a specific pet or appliance) by recording 3 takes via EnrollmentScreen/EnrollmentViewModel.
+
+- `PrototypeBuilder` averages and L2-normalizes the takes' YAMNet embeddings into a `SoundPrototype`, deriving a per-prototype similarity threshold from how consistent the takes were (requires ≥0.60 min pairwise similarity; threshold clamped to 0.75–0.90).
+
+- `CustomSoundMatcher` matches live embeddings against stored prototypes via cosine similarity each inference cycle.
+
+- `EventArbiter` resolves precedence: safety events (Baby Cry, Smoke Alarm) always win unconditionally; otherwise a custom match overrides the generic YAMNet class.
+
+- Note: this contradicts docs/UX_Spec_v2.md, which lists custom/imported sounds as out of MVP scope — docs/FEATURES.md flags this gap explicitly.
 
 
 
@@ -82,9 +108,9 @@ to disturb sleep. It does NOT play continuously.
 
 - Main thread:        Compose UI only
 
-- Dispatchers.IO:     AudioCapture, FeatureExtractor, EventDetector, file I/O
+- Dispatchers.IO:     AudioCapture, FeatureExtractor, file I/O
 
-- Dispatchers.Default: DisturbanceScorer, PolicyEngine
+- Dispatchers.Default: EventDetector, CustomSoundMatcher, DisturbanceScorer, PolicyEngine
 
 - AudioTrack thread:  Managed by AudioTrack internally
 
@@ -109,6 +135,8 @@ to disturb sleep. It does NOT play continuously.
 - Font: Inter (Google Fonts)
 
 - Min tap target: 48×48dp
+
+Additional surface/accent tokens (SurfaceElevated, SurfaceSunken, Stroke, Warning, etc.) live in presentation/ui/theme/Color.kt.
 
 
 
@@ -152,6 +180,8 @@ Full procedure + reusable helper: docs/On_Device_Debugging.md
 
 ## Reference Documents
 
+- Lean PRD: docs/Adaptive_Sleep_Protector_Lean_PRD_v1.md
+
 - BRD v2: docs/BRD_v2.docx
 
 - Architecture: docs/Architecture_v1.md
@@ -159,5 +189,9 @@ Full procedure + reusable helper: docs/On_Device_Debugging.md
 - UX Spec: docs/UX_Spec_v2.md
 
 - Test Plan: docs/Test_Plan_v1.md
+
+- Manual Test Guide: docs/Manual_Test_Guide.md
+
+- Feature reference (source-of-truth, read before assuming spec docs are current): docs/FEATURES.md
 
 - On-Device Debugging: docs/On_Device_Debugging.md

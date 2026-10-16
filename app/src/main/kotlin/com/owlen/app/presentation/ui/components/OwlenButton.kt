@@ -20,7 +20,7 @@ import com.owlen.app.presentation.ui.theme.OnPrimary
 import com.owlen.app.presentation.ui.theme.Primary
 import com.owlen.app.presentation.ui.theme.Safety
 import com.owlen.app.presentation.ui.theme.Stroke
-import com.owlen.app.presentation.ui.theme.SurfaceCard
+import com.owlen.app.presentation.ui.theme.SurfaceElevated
 import com.owlen.app.presentation.ui.theme.TextDisabled
 import com.owlen.app.presentation.ui.theme.TextPrimary
 
@@ -41,7 +41,7 @@ fun OwlenButton(
 ) {
     val (backgroundColor, contentColor) = when (variant) {
         OwlenButtonVariant.Primary -> Primary to OnPrimary
-        OwlenButtonVariant.Secondary -> SurfaceCard to TextPrimary
+        OwlenButtonVariant.Secondary -> SurfaceElevated to TextPrimary
         OwlenButtonVariant.Danger -> Safety to OnPrimary
         OwlenButtonVariant.Success -> Green to OnPrimary
     }

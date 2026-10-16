@@ -34,15 +34,4 @@ object SleepTimerCalculator {
         val t = (elapsedMs.toFloat() / fadeInMs.toFloat()).coerceIn(0f, 1f)
         return floor + (targetVolume - floor) * t
     }
-
-    /**
-     * Legacy fade-in: ramp from near-silent to target over duration. Deprecated.
-     * Kept for backward compatibility until service refactoring in Phase 6.
-     */
-    fun volumeAt(elapsedMs: Long, durationMs: Long, targetVolume: Float): Float {
-        if (durationMs <= 0L) return targetVolume
-        val floor = rampFloor(targetVolume)
-        val t = (elapsedMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
-        return floor + (targetVolume - floor) * t
-    }
 }

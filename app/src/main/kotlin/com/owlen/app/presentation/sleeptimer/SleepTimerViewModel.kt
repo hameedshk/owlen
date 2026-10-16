@@ -1,6 +1,7 @@
 package com.owlen.app.presentation.sleeptimer
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.owlen.app.data.settings.SettingsRepository
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,9 +32,18 @@ class SleepTimerViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
+    init {
+        Log.d(
+            "OwlenDiag",
+            "VM@${System.identityHashCode(this)} created, repo@${System.identityHashCode(serviceRepository)}"
+        )
+    }
+
     private val scheduler = SleepTimerScheduler(appContext)
 
     val serviceState: StateFlow<ServiceState> = serviceRepository.state
+        .onEach { Log.d("OwlenDiag", "raw serviceState -> $it") }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, serviceRepository.state.value)
 
     val settings: StateFlow<SleepSettings> = settingsRepository.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SleepSettings.default())
@@ -60,6 +71,7 @@ class SleepTimerViewModel @Inject constructor(
             state is ServiceState.TimedPlaybackActive &&
                 state.mode == SleepProtectionService.PlaybackMode.PREVIEW
         }
+        .onEach { Log.d("OwlenDiag", "isPreviewPlaying -> $it") }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val _hasExactAlarmPermission = MutableStateFlow(scheduler.hasExactAlarmPermission())

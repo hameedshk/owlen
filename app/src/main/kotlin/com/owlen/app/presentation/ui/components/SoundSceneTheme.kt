@@ -31,12 +31,15 @@ sealed class SoundSceneTheme {
             Color(0xFF001a4d)
         )
         val bandCount = 4
-        // Frequency controls wave density: 0.01f = standard density
-        // Lower = fewer waves, Higher = more waves
-        val frequency = 0.01f
-        // Phase shift creates depth: each band offset by 30 units
+        // Degrees of sine phase advanced per horizontal pixel. The formula is
+        // sin((x * frequency + ...) * PI/180), so this must be large enough to
+        // sweep multiple full 360° cycles across the card width — 0.01f only
+        // swept ~11° total (a flat line). ~1.4f gives a handful of visible
+        // crests across a ~1080px-wide card.
+        val frequency = 1.4f
+        // Phase shift creates depth: each band offset by (band * this) degrees
         // This creates the stacked wave illusion
-        val phaseShiftPerBand = 30f
+        val phaseShiftPerBand = 35f
     }
 
     object Fan : SoundSceneTheme() {
@@ -60,9 +63,11 @@ sealed class SoundSceneTheme {
     object WhiteNoise : SoundSceneTheme() {
         override val skyStartColor = Color(0xFFcfd8dc)  // Cool grey
         override val skyEndColor = Color(0xFF263238)    // Near-black
-        val dotColor = Color.White.copy(alpha = 0.2f)
-        val dotDensity = 8
-        val dotRadius = 0.5f
+        // Radius/alpha bumped up from 0.5f/0.2f — those were sub-pixel at
+        // normal screen density and the "static" texture was invisible.
+        val dotColor = Color.White.copy(alpha = 0.35f)
+        val dotDensity = 16
+        val dotRadius = 1.6f
         // Skip probability: 0.2f = 20% skipped (80% drawn)
         // Lower = denser pattern
         val skipProbability = 0.2f

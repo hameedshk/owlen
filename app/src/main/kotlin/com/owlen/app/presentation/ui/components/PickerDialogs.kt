@@ -2,6 +2,7 @@ package com.owlen.app.presentation.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -47,6 +49,7 @@ import com.owlen.app.presentation.util.to24Hour
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -310,6 +313,7 @@ internal fun NumberDrumPicker(
     val initialIndex = items.indexOf(value).coerceAtLeast(0)
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+    val coroutineScope = rememberCoroutineScope()
 
     // Slot i holds value i-1 (slot 0 is the leading blank), so the value under the
     // centre band is exactly the absolute scroll distance measured in rows.
@@ -359,7 +363,11 @@ internal fun NumberDrumPicker(
                     item.toString()
                 }
                 Box(
-                    modifier = Modifier.size(56.dp, DrumRowHeight),
+                    modifier = Modifier
+                        .size(56.dp, DrumRowHeight)
+                        .clickable {
+                            coroutineScope.launch { listState.animateScrollToItem(index) }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

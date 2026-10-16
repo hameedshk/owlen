@@ -2,6 +2,7 @@ package com.owlen.app.presentation.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -67,6 +69,15 @@ fun PermissionsScreen(
     }
     var batteryGranted by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
 
+    // Below API 33 notifications are granted at install time — nothing to request.
+    var notificationsGranted by remember {
+        mutableStateOf(
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED
+        )
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -74,6 +85,9 @@ fun PermissionsScreen(
                 microphoneGranted = ContextCompat.checkSelfPermission(
                     context, Manifest.permission.RECORD_AUDIO
                 ) == PackageManager.PERMISSION_GRANTED
+                notificationsGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -84,6 +98,12 @@ fun PermissionsScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         microphoneGranted = granted
+    }
+
+    val notificationLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notificationsGranted = granted
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -152,6 +172,41 @@ fun PermissionsScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                FadeSlideIn(delayMillis = 80) {
+                    PermissionRow(
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Notifications,
+                                contentDescription = null,
+                                tint = TextPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        title = "Notifications",
+                        description = "See protection status and safety alerts.",
+                        isGranted = notificationsGranted,
+                        onClick = {
+                            if (!notificationsGranted) {
+                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                    )
+                }
+
+                if (!notificationsGranted) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Recommended: without this, Owlen can't show the Baby Cry or " +
+                            "Smoke Alarm safety alert.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             FadeSlideIn(delayMillis = 120) {
                 PermissionRow(

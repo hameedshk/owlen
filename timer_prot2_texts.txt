@@ -1,0 +1,16 @@
+PLAY NOW
+Sleep Timer
+Timer sound
+Rain
+Duration
+30m
+Fade out over
+10m
+Volume
+Change under Settings → Maximum Volume
+70%
+Preview sound
+Unavailable while protection is running
+Rain plays for 30m, easing down to silence over the last 10m.
+Start Timer
+Sleep protection is running. Stop it to use the timer.

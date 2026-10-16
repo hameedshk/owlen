@@ -1,0 +1,16 @@
+PLAY NOW
+Sleep Timer
+Timer sound
+Rain
+Duration
+30m
+Fade out over
+10m
+Volume
+Change under Settings → Maximum Volume
+70%
+Duration and fade-out are locked while the timer is running — stop it to change them.
+Preview sound
+Unavailable while the timer is running
+Rain plays for 30m, easing down to silence over the last 10m.
+Stop Timer

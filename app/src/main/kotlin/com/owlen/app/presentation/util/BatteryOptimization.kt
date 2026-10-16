@@ -23,10 +23,15 @@ object BatteryOptimization {
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             // Some OEMs strip the direct request dialog; open the system list instead
-            context.startActivity(
-                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
+            openSettings(context)
         }
+    }
+
+    /** Opens the OS battery-optimisation list so the user can review or revoke the permission, regardless of current state. */
+    fun openSettings(context: Context) {
+        context.startActivity(
+            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
     }
 }
