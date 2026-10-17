@@ -69,15 +69,11 @@ fun SleepTimerScreen(
     val isProtectionRunning by viewModel.isProtectionRunning.collectAsState()
     val isTimerRunning by viewModel.isTimerRunning.collectAsState()
     val isPreviewPlaying by viewModel.isPreviewPlaying.collectAsState()
-    android.util.Log.d(
-        "OwlenDiag",
-        "COMPOSE recompose isPreviewPlaying=$isPreviewPlaying isTimerRunning=$isTimerRunning " +
-            "serviceState=$serviceState"
-    )
 
     var openDialog by remember { mutableStateOf(TimerDialog.NONE) }
 
     val timerState = (serviceState as? ServiceState.TimedPlaybackActive)?.takeIf { isTimerRunning }
+    val previewState = (serviceState as? ServiceState.TimedPlaybackActive)?.takeIf { isPreviewPlaying }
     val volumePct = (settings.maxVolume * 100).toInt()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -195,6 +191,13 @@ fun SleepTimerScreen(
                                 null
                             }
                         )
+                        if (previewState != null) {
+                            PreviewProgressBar(
+                                remainingMs = previewState.remainingMs,
+                                totalDurationMs = previewState.totalDurationMs,
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -217,26 +220,26 @@ fun SleepTimerScreen(
                 }
             }
 
-            if (timerState != null) {
-                Spacer(modifier = Modifier.height(20.dp))
-                TimerCountdown(
-                    remainingMs = timerState.remainingMs,
-                    totalDurationMs = timerState.totalDurationMs,
-                    volume = timerState.volume,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
-            }
-
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // Fixed footer: Start/Stop stays on screen without scrolling, so the
-        // control is never hidden below the countdown card mid-timer.
+        // Fixed footer: Start/Stop — and the countdown, while a timer is running — stay on
+        // screen without scrolling. The countdown is the most important thing to see mid-timer,
+        // so it lives here rather than in the scrollable body where it could sit below the fold.
         Column(
             modifier = Modifier
                 .padding(horizontal = 20.dp)
                 .padding(top = 12.dp, bottom = 24.dp)
         ) {
+            if (timerState != null) {
+                TimerCountdown(
+                    remainingMs = timerState.remainingMs,
+                    totalDurationMs = timerState.totalDurationMs,
+                    volume = timerState.volume
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             when {
                 isTimerRunning -> OwlenButton(
                     text = "Stop Timer",
@@ -333,6 +336,35 @@ private fun RowIcon(
         tint = tint,
         modifier = Modifier.size(20.dp)
     )
+}
+
+/** Thin elapsed-time indicator shown under the Preview row while a preview is playing. */
+@Composable
+private fun PreviewProgressBar(
+    remainingMs: Long,
+    totalDurationMs: Long,
+    modifier: Modifier = Modifier
+) {
+    val progress = if (totalDurationMs > 0L) {
+        (1f - remainingMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .clip(RoundedCornerShape(2.dp))
+            .background(Stroke)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(progress)
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(Primary)
+        )
+    }
 }
 
 @Composable

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.owlen.app.domain.model.MaskingSound
 import com.owlen.app.domain.model.SleepTimerSchedule
+import com.owlen.app.domain.model.windowDurationMinutes
 import com.owlen.app.domain.timer.buildScheduleSummary
 import com.owlen.app.presentation.ui.components.OptionPickerDialog
 import com.owlen.app.presentation.ui.components.OwlenButton
@@ -199,7 +200,11 @@ fun SleepScheduleScreen(
             hour = draft.startHour,
             minute = draft.startMinute,
             onConfirm = { hour, minute ->
-                draft = draft.copy(startHour = hour, startMinute = minute)
+                // Fade-in can never outlast the window it plays in
+                val updated = draft.copy(startHour = hour, startMinute = minute)
+                draft = updated.copy(
+                    fadeInMinutes = updated.fadeInMinutes.coerceAtMost(updated.windowDurationMinutes)
+                )
                 openDialog = ScheduleDialog.NONE
             },
             onDismiss = { openDialog = ScheduleDialog.NONE }
@@ -210,7 +215,10 @@ fun SleepScheduleScreen(
             hour = draft.endHour,
             minute = draft.endMinute,
             onConfirm = { hour, minute ->
-                draft = draft.copy(endHour = hour, endMinute = minute)
+                val updated = draft.copy(endHour = hour, endMinute = minute)
+                draft = updated.copy(
+                    fadeInMinutes = updated.fadeInMinutes.coerceAtMost(updated.windowDurationMinutes)
+                )
                 openDialog = ScheduleDialog.NONE
             },
             onDismiss = { openDialog = ScheduleDialog.NONE }
@@ -218,7 +226,7 @@ fun SleepScheduleScreen(
 
         ScheduleDialog.FADE_IN -> RangePickerDialog(
             title = "Fade In Over",
-            range = 0..60,
+            range = 0..draft.windowDurationMinutes.coerceAtMost(60),
             value = draft.fadeInMinutes,
             unitLabel = "minutes",
             onConfirm = { minutes ->

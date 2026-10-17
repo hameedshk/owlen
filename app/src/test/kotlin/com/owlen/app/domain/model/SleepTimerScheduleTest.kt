@@ -20,4 +20,28 @@ class SleepTimerScheduleTest {
             "default window must cross midnight (start hour > end hour) to count as a nightly schedule"
         )
     }
+
+    @Test
+    fun `window duration for a same-day schedule is a plain subtraction`() {
+        val schedule = SleepTimerSchedule(startHour = 6, startMinute = 0, endHour = 8, endMinute = 30)
+        assertEquals(150, schedule.windowDurationMinutes)
+    }
+
+    @Test
+    fun `window duration wraps past midnight when end is before start`() {
+        val schedule = SleepTimerSchedule(startHour = 22, startMinute = 0, endHour = 6, endMinute = 0)
+        assertEquals(8 * 60, schedule.windowDurationMinutes)
+    }
+
+    @Test
+    fun `window duration wraps a full day when start and end are equal`() {
+        val schedule = SleepTimerSchedule(startHour = 22, startMinute = 15, endHour = 22, endMinute = 15)
+        assertEquals(24 * 60, schedule.windowDurationMinutes)
+    }
+
+    @Test
+    fun `window duration handles a wrap with non-zero minutes`() {
+        val schedule = SleepTimerSchedule(startHour = 23, startMinute = 30, endHour = 0, endMinute = 15)
+        assertEquals(45, schedule.windowDurationMinutes)
+    }
 }

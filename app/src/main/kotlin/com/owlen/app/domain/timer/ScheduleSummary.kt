@@ -1,6 +1,7 @@
 package com.owlen.app.domain.timer
 
 import com.owlen.app.domain.model.MaskingSound
+import java.util.Locale
 
 /**
  * Pure function to generate a human-readable summary sentence for a sleep schedule.
@@ -30,5 +31,5 @@ private fun formatTime(hour: Int, minute: Int): String {
     val normalizedHour = hour % 24
     val amPm = if (normalizedHour < 12) "AM" else "PM"
     val displayHour = if (normalizedHour == 0) 12 else if (normalizedHour > 12) normalizedHour - 12 else normalizedHour
-    return String.format("%d:%02d %s", displayHour, minute, amPm)
+    return String.format(Locale.US, "%d:%02d %s", displayHour, minute, amPm)
 }

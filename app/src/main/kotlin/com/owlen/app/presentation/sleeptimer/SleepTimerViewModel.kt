@@ -1,7 +1,6 @@
 package com.owlen.app.presentation.sleeptimer
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.owlen.app.data.settings.SettingsRepository
@@ -20,7 +19,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,17 +30,13 @@ class SleepTimerViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
-    init {
-        Log.d(
-            "OwlenDiag",
-            "VM@${System.identityHashCode(this)} created, repo@${System.identityHashCode(serviceRepository)}"
-        )
-    }
-
     private val scheduler = SleepTimerScheduler(appContext)
 
+    // Eagerly shared (not WhileSubscribed): this mirrors a foreground service that keeps
+    // running and emitting regardless of whether the screen is currently collecting, so a
+    // lazily-(re)started subscription must never be the thing deciding whether Preview/Timer
+    // UI reflects live playback.
     val serviceState: StateFlow<ServiceState> = serviceRepository.state
-        .onEach { Log.d("OwlenDiag", "raw serviceState -> $it") }
         .stateIn(viewModelScope, SharingStarted.Eagerly, serviceRepository.state.value)
 
     val settings: StateFlow<SleepSettings> = settingsRepository.settings
@@ -56,7 +50,7 @@ class SleepTimerViewModel @Inject constructor(
 
     val isProtectionRunning: StateFlow<Boolean> = serviceState
         .map { it is ServiceState.Monitoring || it is ServiceState.MaskingActive || it is ServiceState.SafetyAlertActive }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** A countdown belongs on screen only for a real timer — a preview is not a timer. */
     val isTimerRunning: StateFlow<Boolean> = serviceState
@@ -64,15 +58,14 @@ class SleepTimerViewModel @Inject constructor(
             state is ServiceState.TimedPlaybackActive &&
                 state.mode == SleepProtectionService.PlaybackMode.TIMER
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val isPreviewPlaying: StateFlow<Boolean> = serviceState
         .map { state ->
             state is ServiceState.TimedPlaybackActive &&
                 state.mode == SleepProtectionService.PlaybackMode.PREVIEW
         }
-        .onEach { Log.d("OwlenDiag", "isPreviewPlaying -> $it") }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _hasExactAlarmPermission = MutableStateFlow(scheduler.hasExactAlarmPermission())
 

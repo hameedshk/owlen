@@ -1,6 +1,5 @@
 package com.owlen.app.service
 
-import android.util.Log
 import com.owlen.app.domain.model.DetectedEvent
 import com.owlen.app.domain.model.DisturbanceResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +20,6 @@ class ServiceRepository @Inject constructor() {
     val lastDetection: StateFlow<Pair<DetectedEvent, DisturbanceResult>?> = _lastDetection.asStateFlow()
 
     fun updateState(newState: ServiceState) {
-        Log.d("OwlenDiag", "ServiceRepository@${System.identityHashCode(this)} updateState -> $newState")
         _state.value = newState
     }
 
